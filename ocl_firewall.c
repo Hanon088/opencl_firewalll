@@ -13,7 +13,8 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
     if (!skb)
         return NF_ACCEPT;
 
-    u32 source_ip, dest_ip;
+    u32 source_ip;
+    u32 dest_ip;
     struct sk_buff *sb = NULL;
     struct iphdr *iph;
     sb = skb;
