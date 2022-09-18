@@ -4,7 +4,7 @@
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
 #include <linux/ip.h>
-#include "device_controller.h"
+//#include "device_controller.h"
 
 static struct nf_hook_ops *check_rules_ops = NULL;
 
@@ -18,6 +18,7 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
     struct iphdr *iph;
     sb = skb;
     iph = ip_hdr(sb);
+    unsigned int verdict;
     /*ntohl convert network byteorder into host byteorder
     network byteorder = big endian
     host byteorder = most likely little endian?
@@ -25,8 +26,9 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
     */
     source_ip = ntohl(iph->saddr);
     dest_ip = ntohl(iph->daddr);
-    printk(KERN_INFO "OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", source_ip[0], source_ip[1], source_ip[2], source_ip[3], dest_ip[0], dest_ip[1], dest_ip[2], dest_ip[3]);
-    unsigned int verdict = check_rules_in_device();
+    printk(KERN_INFO "OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char*)&source_ip)[3], ((unsigned char*)&source_ip)[2], ((unsigned char*)&source_ip)[1], ((unsigned char*)&source_ip)[0], ((unsigned char*)&dest_ip)[3], ((unsigned char*)&dest_ip)[2], ((unsigned char*)&dest_ip)[1], ((unsigned char*)&dest_ip)[0]);
+    //verdict = check_rules_in_device();
+    verdict = NF_ACCEPT;
     return verdict;
 }
 

@@ -1,1 +1,13 @@
 .vscode
+.ocl_firewall.ko.cmd
+.ocl_firewall.mod.cmd
+.ocl_firewall.o.cmd
+.ocl_firewall.mod.o.cmd
+ocl_firewall.mod
+ocl_firewall.mod.c
+ocl_firewall.mod.o
+ocl_firewall.o
+ocl_firewall.ko
+Module.symvers
+modules.order
+cleanup_compilation
