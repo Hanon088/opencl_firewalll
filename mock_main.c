@@ -13,8 +13,21 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
     if (!skb)
         return NF_ACCEPT;
 
-    printk(KERN_INFO "OCL FIREWALL RUNNING\n");
-    return NF_ACCEPT;
+    u32 source_ip, dest_ip;
+    struct sk_buff *sb = NULL;
+    struct iphdr *iph;
+    sb = skb;
+    iph = ip_hdr(sb);
+    /*ntohl convert network byteorder into host byteorder
+    network byteorder = big endian
+    host byteorder = most likely little endian?
+    gpu byteorder = little endian
+    */
+    source_ip = ntohl(iph->saddr);
+    dest_ip = ntohl(iph->daddr);
+    printk(KERN_INFO "OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", source_ip[0], source_ip[1], source_ip[2], source_ip[3], dest_ip[0], dest_ip[1], dest_ip[2], dest_ip[3]);
+    unsigned int verdict = check_rules_in_device();
+    return verdict;
 }
 
 static int __init ocl_firewall_init(void)
@@ -35,6 +48,11 @@ static int __init ocl_firewall_init(void)
 
 static void __exit ocl_firewall_exit(void)
 {
+    if (check_rules_ops != NULL)
+    {
+        nf_unregister_net_hook(&init_net, check_rules_ops);
+        kfree(check_rules_ops);
+    }
     printk(KERN_INFO "OCL FIREWALL REMOVED\n");
 }
 
