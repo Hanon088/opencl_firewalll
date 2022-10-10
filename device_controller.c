@@ -21,7 +21,7 @@ int load_rule_file()
     return 0;
 }
 
-int init_device(void)
+int main()
 {
     int err;
     err = load_rule_file();
