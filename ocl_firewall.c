@@ -116,6 +116,8 @@ static int open(struct inode *inode, struct file *filp)
 	pr_info("OCL FIREWALL MMAP virt_to_phys = 0x%llx\n", (unsigned long long)virt_to_phys((void *)info));
 	info->data = (char *)get_zeroed_page(GFP_KERNEL);
 	// used for init test, to be modified
+	//memcpy(info->data, "0000", BUFFER_SIZE);
+	//memcpy(info->data+4, "0000", BUFFER_SIZE);
 	filp->private_data = info;
 	global_info = info;
 	FILE_COUNT++;

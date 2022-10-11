@@ -84,7 +84,10 @@ int main(int argc, char **argv)
     char *address;
     char buf[BUFFER_SIZE];
     uintptr_t paddr;
-    uint32_t *source_ip, *dest_ip;
+    unsigned char *source_ip, *dest_ip;
+
+    source_ip = (unsigned char*) malloc(BUFFER_SIZE);
+    dest_ip = (unsigned char*) malloc(BUFFER_SIZE);
 
     if (argc < 2) {
         printf("Usage: %s <mmap_file>\n", argv[0]);
@@ -106,10 +109,16 @@ int main(int argc, char **argv)
     }
     
     while(1){
+        if(!address){
+            continue;
+        }
         memcpy(source_ip, address, 4);
+        //printf("OCL FIREWALL s %u.%u.%u.%u\n", source_ip[3], source_ip[2], source_ip[1], source_ip[0]);
         memcpy(dest_ip, address+4, 4);
-        printf("OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char*)&source_ip)[3], ((unsigned char*)&source_ip)[2], ((unsigned char*)&source_ip)[1], ((unsigned char*)&source_ip)[0], ((unsigned char*)&dest_ip)[3], ((unsigned char*)&dest_ip)[2], ((unsigned char*)&dest_ip)[1], ((unsigned char*)&dest_ip)[0]);
+        printf("OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", source_ip[3], source_ip[2], source_ip[1], source_ip[0], dest_ip[3], dest_ip[2], dest_ip[1], dest_ip[0]);
+        
     }
+
     if (munmap(address, page_size)) {
         perror("munmap");
         assert(0);
