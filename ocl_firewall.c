@@ -1,58 +1,64 @@
-//kernel libraries
+// kernel libraries
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 
-//ipv4 libraries
+// ipv4 libraries
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
 #include <linux/ip.h>
 
-//shared memory management
+// shared memory management
 #include <linux/fs.h>
 #include <linux/mm.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h> /* copy_from_user, copy_to_user */
 #include <linux/slab.h>
 
-
 static struct nf_hook_ops *check_rules_ops = NULL;
 static const char *filename = "OCL_FIREWALL_BUFFER";
+unsigned int FILE_COUNT = 0;
 
-enum { BUFFER_SIZE = 4 };
+enum
+{
+	BUFFER_SIZE = 4
+};
 
-struct mmap_info {
+struct mmap_info
+{
 	char *data;
 };
 
 struct mmap_info *global_info;
 
-
 static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 {
-    if (!skb)
-        return NF_ACCEPT;
+	if (!skb)
+		return NF_ACCEPT;
 
-    u32 source_ip;
-    u32 dest_ip;
-    struct sk_buff *sb = NULL;
-    struct iphdr *iph;
-    sb = skb;
-    iph = ip_hdr(sb);
-    unsigned int verdict;
-    /*ntohl convert network byteorder into host byteorder
-    network byteorder = big endian
-    host byteorder = most likely little endian?
-    gpu byteorder = little endian
-    */
-    source_ip = ntohl(iph->saddr);
-    dest_ip = ntohl(iph->daddr);
-    printk(KERN_INFO "OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char*)&source_ip)[3], ((unsigned char*)&source_ip)[2], ((unsigned char*)&source_ip)[1], ((unsigned char*)&source_ip)[0], ((unsigned char*)&dest_ip)[3], ((unsigned char*)&dest_ip)[2], ((unsigned char*)&dest_ip)[1], ((unsigned char*)&dest_ip)[0]);
-    memcpy(global_info->data, &source_ip, BUFFER_SIZE);
-    memcpy(global_info->data+4, &dest_ip, BUFFER_SIZE);
-    //verdict = check_rules_in_device();
-    verdict = NF_ACCEPT;
-    return verdict;
+	u32 source_ip;
+	u32 dest_ip;
+	struct sk_buff *sb = NULL;
+	struct iphdr *iph;
+	sb = skb;
+	iph = ip_hdr(sb);
+	unsigned int verdict;
+	/*ntohl convert network byteorder into host byteorder
+	network byteorder = big endian
+	host byteorder = most likely little endian?
+	gpu byteorder = little endian
+	*/
+	source_ip = ntohl(iph->saddr);
+	dest_ip = ntohl(iph->daddr);
+	printk(KERN_INFO "OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
+	if (FILE_COUNT)
+	{
+		memcpy(global_info->data, &source_ip, BUFFER_SIZE);
+		memcpy(global_info->data + 4, &dest_ip, BUFFER_SIZE);
+	}
+	// verdict = check_rules_in_device();
+	verdict = NF_ACCEPT;
+	return verdict;
 }
 
 /* After unmap. */
@@ -69,7 +75,8 @@ static vm_fault_t vm_fault(struct vm_fault *vmf)
 
 	pr_info("OCL FIREWALL MMAP vm_fault\n");
 	info = (struct mmap_info *)vmf->vma->vm_private_data;
-	if (info->data) {
+	if (info->data)
+	{
 		page = virt_to_page(info->data);
 		get_page(page);
 		vmf->page = page;
@@ -84,10 +91,10 @@ static void vm_open(struct vm_area_struct *vma)
 }
 
 static struct vm_operations_struct vm_ops =
-{
-	.close = vm_close,
-	.fault = vm_fault,
-	.open = vm_open,
+	{
+		.close = vm_close,
+		.fault = vm_fault,
+		.open = vm_open,
 };
 
 static int mmap(struct file *filp, struct vm_area_struct *vma)
@@ -108,9 +115,10 @@ static int open(struct inode *inode, struct file *filp)
 	info = kmalloc(sizeof(struct mmap_info), GFP_KERNEL);
 	pr_info("OCL FIREWALL MMAP virt_to_phys = 0x%llx\n", (unsigned long long)virt_to_phys((void *)info));
 	info->data = (char *)get_zeroed_page(GFP_KERNEL);
-	//used for init test, to be modified
+	// used for init test, to be modified
 	filp->private_data = info;
-    global_info = info;
+	global_info = info;
+	FILE_COUNT++;
 	return 0;
 }
 
@@ -122,7 +130,8 @@ static ssize_t read(struct file *filp, char __user *buf, size_t len, loff_t *off
 	pr_info("OCL FIREWALL MMAP read\n");
 	info = filp->private_data;
 	ret = min(len, (size_t)BUFFER_SIZE);
-	if (copy_to_user(buf, info->data, ret)) {
+	if (copy_to_user(buf, info->data, ret))
+	{
 		ret = -EFAULT;
 	}
 	return ret;
@@ -134,9 +143,12 @@ static ssize_t write(struct file *filp, const char __user *buf, size_t len, loff
 
 	pr_info("OCL FIREWALL MMAP write\n");
 	info = filp->private_data;
-	if (copy_from_user(info->data, buf, min(len, (size_t)BUFFER_SIZE))) {
+	if (copy_from_user(info->data, buf, min(len, (size_t)BUFFER_SIZE)))
+	{
 		return -EFAULT;
-	} else {
+	}
+	else
+	{
 		return len;
 	}
 }
@@ -150,6 +162,7 @@ static int release(struct inode *inode, struct file *filp)
 	free_page((unsigned long)info->data);
 	kfree(info);
 	filp->private_data = NULL;
+	FILE_COUNT--;
 	return 0;
 }
 
@@ -163,30 +176,30 @@ static const struct file_operations fops = {
 
 static int __init ocl_firewall_init(void)
 {
-    check_rules_ops = (struct nf_hook_ops *)kcalloc(1, sizeof(struct nf_hook_ops), GFP_KERNEL);
-    if (check_rules_ops != NULL)
-    {
-        check_rules_ops->hook = (nf_hookfn *)check_rules;
-        check_rules_ops->hooknum = NF_INET_PRE_ROUTING;
-        check_rules_ops->pf = NFPROTO_IPV4;
-        check_rules_ops->priority = NF_IP_PRI_FIRST;
+	check_rules_ops = (struct nf_hook_ops *)kcalloc(1, sizeof(struct nf_hook_ops), GFP_KERNEL);
+	if (check_rules_ops != NULL)
+	{
+		check_rules_ops->hook = (nf_hookfn *)check_rules;
+		check_rules_ops->hooknum = NF_INET_PRE_ROUTING;
+		check_rules_ops->pf = NFPROTO_IPV4;
+		check_rules_ops->priority = NF_IP_PRI_FIRST;
 
-        nf_register_net_hook(&init_net, check_rules_ops);
-    }
-    proc_create(filename, 0, NULL, &fops);
-    printk(KERN_INFO "OCL FIREWALL LOADED\n");
-    return 0;
+		nf_register_net_hook(&init_net, check_rules_ops);
+	}
+	proc_create(filename, 0, NULL, &fops);
+	printk(KERN_INFO "OCL FIREWALL LOADED\n");
+	return 0;
 }
 
 static void __exit ocl_firewall_exit(void)
 {
-    if (check_rules_ops != NULL)
-    {
-        nf_unregister_net_hook(&init_net, check_rules_ops);
-        kfree(check_rules_ops);
-    }
-    remove_proc_entry(filename, NULL);
-    printk(KERN_INFO "OCL FIREWALL REMOVED\n");
+	if (check_rules_ops != NULL)
+	{
+		nf_unregister_net_hook(&init_net, check_rules_ops);
+		kfree(check_rules_ops);
+	}
+	remove_proc_entry(filename, NULL);
+	printk(KERN_INFO "OCL FIREWALL REMOVED\n");
 }
 
 module_init(ocl_firewall_init);
