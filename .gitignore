@@ -12,3 +12,4 @@ Module.symvers
 modules.order
 cleanup_compilation
 .ocl_firewall.o.d
+user

@@ -2,6 +2,8 @@
 #include <linux/netfilter_ipv4.h>
 #include <linux/ip.h>
 #include <CL/cl.h>
+#define CL_TARGET_OPENCL_VERSION 120
+
 
 unsigned int check_rules_in_device(void)
 {
@@ -26,6 +28,7 @@ int main()
     int err;
     err = load_rule_file();
     // then alloc rule into device
+    uint32_t ip;
 
     err = load_device_code();
     // create program here
