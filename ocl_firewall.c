@@ -78,6 +78,7 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
 		memcpy(global_info->data, &ip_set_flag, 4);
 		ip_set_flag = 0;
 
+		/*
 		// wait until verdict is set
 		while (!verdict_set_flag)
 		{
@@ -90,6 +91,7 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
 
 		// read verdict
 		memcpy(&verdict, global_info->data + 16, 4);
+		*/
 	}
 
 	return (unsigned int *)verdict;

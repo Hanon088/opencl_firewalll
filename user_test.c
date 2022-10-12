@@ -141,6 +141,7 @@ int main(int argc, char **argv)
 
         memcpy(&ip_set_flag, address, 4);
         memcpy(&verdict_set_flag, address + 12, 4);
+        
         if ((!ip_set_flag) || verdict_set_flag)
             continue;
 
@@ -152,6 +153,7 @@ int main(int argc, char **argv)
         memcpy(address + 16, &verdict, 4);
         verdict_set_flag = 1;
         memcpy(address + 12, &verdict_set_flag, 4);
+        
     }
 
     if (munmap(address, page_size))
