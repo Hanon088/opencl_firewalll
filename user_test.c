@@ -8,10 +8,19 @@
 #include <sys/mman.h>
 #include <unistd.h> /* sysconf */
 
+#define NF_DROP 0
+#define NF_ACCEPT 1
+#define NF_STOLEN 2
+#define NF_QUEUE 3
+#define NF_REPEAT 4
+#define NF_STOP 5 /* Deprecated, for userspace nf_queue compatibility. */
+#define NF_MAX_VERDICT NF_STOP
+
 /* Format documented at:
  * https://github.com/torvalds/linux/blob/v4.9/Documentation/vm/pagemap.txt
  */
-typedef struct {
+typedef struct
+{
     uint64_t pfn : 54;
     unsigned int soft_dirty : 1;
     unsigned int file_page : 1;
@@ -33,11 +42,13 @@ int pagemap_get_entry(PagemapEntry *entry, int pagemap_fd, uintptr_t vaddr)
     uint64_t data;
 
     nread = 0;
-    while (nread < sizeof(data)) {
-        ret = pread(pagemap_fd, ((uint8_t*)&data) + nread, sizeof(data),
-                (vaddr / sysconf(_SC_PAGE_SIZE)) * sizeof(data) + nread);
+    while (nread < sizeof(data))
+    {
+        ret = pread(pagemap_fd, ((uint8_t *)&data) + nread, sizeof(data),
+                    (vaddr / sysconf(_SC_PAGE_SIZE)) * sizeof(data) + nread);
         nread += ret;
-        if (ret <= 0) {
+        if (ret <= 0)
+        {
             return 1;
         }
     }
@@ -63,11 +74,13 @@ int virt_to_phys_user(uintptr_t *paddr, pid_t pid, uintptr_t vaddr)
 
     snprintf(pagemap_file, sizeof(pagemap_file), "/proc/%ju/pagemap", (uintmax_t)pid);
     pagemap_fd = open(pagemap_file, O_RDONLY);
-    if (pagemap_fd < 0) {
+    if (pagemap_fd < 0)
+    {
         return 1;
     }
     PagemapEntry entry;
-    if (pagemap_get_entry(&entry, pagemap_fd, vaddr)) {
+    if (pagemap_get_entry(&entry, pagemap_fd, vaddr))
+    {
         return 1;
     }
     close(pagemap_fd);
@@ -75,7 +88,10 @@ int virt_to_phys_user(uintptr_t *paddr, pid_t pid, uintptr_t vaddr)
     return 0;
 }
 
-enum { BUFFER_SIZE = 4 };
+enum
+{
+    BUFFER_SIZE = 4
+};
 
 int main(int argc, char **argv)
 {
@@ -85,41 +101,52 @@ int main(int argc, char **argv)
     char buf[BUFFER_SIZE];
     uintptr_t paddr;
     unsigned char *source_ip, *dest_ip;
+    uint32_t ip_set_flag, verdict_set_flag, verdict;
 
-    source_ip = (unsigned char*) malloc(BUFFER_SIZE);
-    dest_ip = (unsigned char*) malloc(BUFFER_SIZE);
+    source_ip = (unsigned char *)malloc(BUFFER_SIZE);
+    dest_ip = (unsigned char *)malloc(BUFFER_SIZE);
 
-    if (argc < 2) {
+    if (argc < 2)
+    {
         printf("Usage: %s <mmap_file>\n", argv[0]);
         return EXIT_FAILURE;
     }
     page_size = sysconf(_SC_PAGE_SIZE);
     printf("open pathname = %s\n", argv[1]);
     fd = open(argv[1], O_RDWR | O_SYNC);
-    if (fd < 0) {
+    if (fd < 0)
+    {
         perror("open");
         assert(0);
     }
     printf("fd = %d\n", fd);
 
     address = mmap(NULL, page_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (address == MAP_FAILED) {
+    if (address == MAP_FAILED)
+    {
         perror("mmap");
         assert(0);
     }
-    
-    while(1){
-        if(!address){
+
+    while (1)
+    {
+        memcpy(&ip_set_flag, address, 4);
+        memcpy(&verdict_set_flag, address + 12, 4);
+        if ((!ip_set_flag) || verdict_set_flag)
             continue;
-        }
-        memcpy(source_ip, address, 4);
-        //printf("OCL FIREWALL s %u.%u.%u.%u\n", source_ip[3], source_ip[2], source_ip[1], source_ip[0]);
-        memcpy(dest_ip, address+4, 4);
+
+        memcpy(source_ip, address + 4, 4);
+        // printf("OCL FIREWALL s %u.%u.%u.%u\n", source_ip[3], source_ip[2], source_ip[1], source_ip[0]);
+        memcpy(dest_ip, address + 8, 4);
         printf("OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", source_ip[3], source_ip[2], source_ip[1], source_ip[0], dest_ip[3], dest_ip[2], dest_ip[1], dest_ip[0]);
-        
+        verdict = NF_ACCEPT;
+        memcpy(address + 16, &verdict, 4);
+        verdict_set_flag = 1;
+        memcpy(address + 12, &verdict_set_flag, 4);
     }
 
-    if (munmap(address, page_size)) {
+    if (munmap(address, page_size))
+    {
         perror("munmap");
         assert(0);
     }

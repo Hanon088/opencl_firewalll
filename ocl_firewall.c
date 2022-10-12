@@ -29,6 +29,7 @@ struct mmap_info
 	char *data;
 };
 
+// may break if multiple open are called
 struct mmap_info *global_info;
 
 static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
@@ -40,9 +41,10 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
 	u32 dest_ip;
 	struct sk_buff *sb = NULL;
 	struct iphdr *iph;
+	u32 ip_set_flag, verdict_set_flag;
+	u32 verdict;
 	sb = skb;
 	iph = ip_hdr(sb);
-	unsigned int verdict;
 	/*ntohl convert network byteorder into host byteorder
 	network byteorder = big endian
 	host byteorder = most likely little endian?
@@ -51,14 +53,38 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
 	source_ip = ntohl(iph->saddr);
 	dest_ip = ntohl(iph->daddr);
 	printk(KERN_INFO "OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
+	verdict = NF_ACCEPT;
 	if (FILE_COUNT)
 	{
-		memcpy(global_info->data, &source_ip, BUFFER_SIZE);
-		memcpy(global_info->data + 4, &dest_ip, BUFFER_SIZE);
+		// set flags to 0
+		ip_set_flag = 0;
+		verdict_set_flag = 0;
+		memcpy(global_info->data, &ip_set_flag, 4);
+		memcpy(global_info->data + 12, &verdict_set_flag, 4);
+
+		memcpy(global_info->data + 4, &source_ip, 4);
+		memcpy(global_info->data + 8, &dest_ip, 4);
+
+		// set ip_set_flag to 1, to tell user module data is there
+		ip_set_flag = 1;
+		memcpy(global_info->data, &ip_set_flag, 4);
+		ip_set_flag = 0;
+
+		// wait until verdict is set
+		while (!verdict_set_flag)
+		{
+			memcpy(&verdict_set_flag, global_info->data + 12, 4);
+			continue;
+		}
+
+		// immediately change ip_set_flag to 0 to stop user module
+		memcpy(global_info->data, &ip_set_flag, 4);
+
+		// read verdict
+		memcpy(&verdict, global_info->data + 16, 4);
 	}
-	// verdict = check_rules_in_device();
-	verdict = NF_ACCEPT;
-	return verdict;
+
+	return (unsigned int *)verdict;
 }
 
 /* After unmap. */
@@ -116,10 +142,12 @@ static int open(struct inode *inode, struct file *filp)
 	pr_info("OCL FIREWALL MMAP virt_to_phys = 0x%llx\n", (unsigned long long)virt_to_phys((void *)info));
 	info->data = (char *)get_zeroed_page(GFP_KERNEL);
 	// used for init test, to be modified
-	//memcpy(info->data, "0000", BUFFER_SIZE);
-	//memcpy(info->data+4, "0000", BUFFER_SIZE);
+	// memcpy(info->data, "0000", BUFFER_SIZE);
+	// memcpy(info->data+4, "0000", BUFFER_SIZE);
 	filp->private_data = info;
 	global_info = info;
+
+	// change this to shared one process only somehow
 	FILE_COUNT++;
 	return 0;
 }
