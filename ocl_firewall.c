@@ -56,6 +56,14 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
 	verdict = NF_ACCEPT;
 	if (FILE_COUNT)
 	{
+		/*
+		BYTE 0 - 3 ip_set_flag
+		BYTE 4 - 7 source_ip
+		BYTE 8 - 11 dest_ip
+		BYTE 12 - 15 verdict_set_flag
+		BYTE 16 - 19 verdict
+		*/
+
 		// set flags to 0
 		ip_set_flag = 0;
 		verdict_set_flag = 0;

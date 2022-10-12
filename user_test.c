@@ -130,6 +130,15 @@ int main(int argc, char **argv)
 
     while (1)
     {
+
+        /*
+        BYTE 0 - 3 ip_set_flag
+        BYTE 4 - 7 source_ip
+        BYTE 8 - 11 dest_ip
+        BYTE 12 - 15 verdict_set_flag
+        BYTE 16 - 19 verdict
+        */
+
         memcpy(&ip_set_flag, address, 4);
         memcpy(&verdict_set_flag, address + 12, 4);
         if ((!ip_set_flag) || verdict_set_flag)
