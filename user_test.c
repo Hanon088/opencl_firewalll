@@ -127,7 +127,7 @@ int main(int argc, char **argv)
         perror("mmap");
         assert(0);
     }
-
+    verdict = 0;
     while (1)
     {
 
@@ -142,6 +142,7 @@ int main(int argc, char **argv)
         memcpy(&ip_set_flag, address, 4);
         memcpy(&verdict_set_flag, address + 12, 4);
         
+        printf("IP FLAG %i VERDICT FLAG %i", ip_set_flag, verdict_set_flag);
         if ((!ip_set_flag) || verdict_set_flag)
             continue;
 
@@ -149,7 +150,8 @@ int main(int argc, char **argv)
         // printf("OCL FIREWALL s %u.%u.%u.%u\n", source_ip[3], source_ip[2], source_ip[1], source_ip[0]);
         memcpy(dest_ip, address + 8, 4);
         printf("OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", source_ip[3], source_ip[2], source_ip[1], source_ip[0], dest_ip[3], dest_ip[2], dest_ip[1], dest_ip[0]);
-        verdict = NF_ACCEPT;
+        //verdict = NF_ACCEPT;
+        verdict++;
         memcpy(address + 16, &verdict, 4);
         verdict_set_flag = 1;
         memcpy(address + 12, &verdict_set_flag, 4);
@@ -161,7 +163,8 @@ int main(int argc, char **argv)
         perror("munmap");
         assert(0);
     }
-
+    free(source_ip);
+    free(dest_ip);
     puts("close");
     close(fd);
     return EXIT_SUCCESS;

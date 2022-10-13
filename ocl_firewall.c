@@ -15,6 +15,10 @@
 #include <linux/uaccess.h> /* copy_from_user, copy_to_user */
 #include <linux/slab.h>
 
+//#include <linux/wait.h>
+//#include <linux/kthread.h>
+//#include <linux/delay.h>
+
 static struct nf_hook_ops *check_rules_ops = NULL;
 static const char *filename = "OCL_FIREWALL_BUFFER";
 unsigned int FILE_COUNT = 0;
@@ -32,6 +36,20 @@ struct mmap_info
 // may break if multiple open are called
 struct mmap_info *global_info;
 
+/*DECLARE_WAIT_QUEUE_HEAD(wq);
+
+static struct task_struct *wait_thread;
+
+static int wait_function(void * verdict_set_flag)
+{
+        
+        while(1) {
+                wait_event(wq, memcmp(global_info->data + 12, &verdict_set_flag, 4) != 0);
+        }
+        do_exit(0);
+        return 0;
+}*/
+
 static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 {
 	if (!skb)
@@ -42,7 +60,7 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
 	struct sk_buff *sb = NULL;
 	struct iphdr *iph;
 	u32 ip_set_flag, verdict_set_flag;
-	u32 verdict;
+	u32 verdict, verdict_a;
 	sb = skb;
 	iph = ip_hdr(sb);
 	/*ntohl convert network byteorder into host byteorder
@@ -52,7 +70,7 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
 	*/
 	source_ip = ntohl(iph->saddr);
 	dest_ip = ntohl(iph->daddr);
-	printk(KERN_INFO "OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
+	//printk(KERN_INFO "OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u \n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
 	verdict = NF_ACCEPT;
 	if (FILE_COUNT)
 	{
@@ -78,20 +96,27 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
 		memcpy(global_info->data, &ip_set_flag, 4);
 		ip_set_flag = 0;
 
-		/*
-		// wait until verdict is set
-		while (!verdict_set_flag)
-		{
-			memcpy(&verdict_set_flag, global_info->data + 12, 4);
-			continue;
-		}
+		// insert delay here somehow
+		//usleep_range(10000, 20000);
+		/*if(memcmp(global_info->data + 12, &verdict_set_flag, 4) == 0)
+		    usleep_range(10000, 20000);*/
 
+		//wait_event(wq, memcmp(global_info->data + 12, &verdict_set_flag, 4) != 0);
+
+		/*wait_thread = kthread_create(wait_function, &verdict_set_flag, "OCLFWAIT");
+        if (wait_thread) {
+                wake_up_process(wait_thread);
+        } else
+                pr_info("OCL FIREWALL Wait Thread creation failed\n");
+		
+		wake_up_all(&wq);*/
 		// immediately change ip_set_flag to 0 to stop user module
-		memcpy(global_info->data, &ip_set_flag, 4);
+		//memcpy(global_info->data, &ip_set_flag, 4);
 
 		// read verdict
-		memcpy(&verdict, global_info->data + 16, 4);
-		*/
+		memcpy(&verdict_a, global_info->data + 16, 4);
+		printk(KERN_INFO "OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u v %i\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0], verdict_a);
+
 	}
 
 	return (unsigned int *)verdict;

@@ -11,5 +11,6 @@ ocl_firewall.ko
 Module.symvers
 modules.order
 cleanup_compilation
+cleanup
 .ocl_firewall.o.d
 user
