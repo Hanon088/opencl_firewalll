@@ -14,3 +14,4 @@ cleanup_compilation
 cleanup
 .ocl_firewall.o.d
 user
+out.txt

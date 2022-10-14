@@ -102,7 +102,9 @@ int main(int argc, char **argv)
     uintptr_t paddr;
     unsigned char *source_ip, *dest_ip;
     uint32_t ip_set_flag, verdict_set_flag, verdict;
-
+    unsigned int ROUND_ROBIN_NUM;
+    
+    ROUND_ROBIN_NUM = 0;
     source_ip = (unsigned char *)malloc(BUFFER_SIZE);
     dest_ip = (unsigned char *)malloc(BUFFER_SIZE);
 
@@ -130,7 +132,6 @@ int main(int argc, char **argv)
     verdict = 0;
     while (1)
     {
-
         /*
         BYTE 0 - 3 ip_set_flag
         BYTE 4 - 7 source_ip
@@ -138,11 +139,12 @@ int main(int argc, char **argv)
         BYTE 12 - 15 verdict_set_flag
         BYTE 16 - 19 verdict
         */
+        address = address + ROUND_ROBIN_NUM;
 
         memcpy(&ip_set_flag, address, 4);
         memcpy(&verdict_set_flag, address + 12, 4);
         
-        printf("IP FLAG %i VERDICT FLAG %i", ip_set_flag, verdict_set_flag);
+        printf("IP FLAG %i VERDICT FLAG %i\n", ip_set_flag, verdict_set_flag);
         if ((!ip_set_flag) || verdict_set_flag)
             continue;
 
@@ -150,12 +152,13 @@ int main(int argc, char **argv)
         // printf("OCL FIREWALL s %u.%u.%u.%u\n", source_ip[3], source_ip[2], source_ip[1], source_ip[0]);
         memcpy(dest_ip, address + 8, 4);
         printf("OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", source_ip[3], source_ip[2], source_ip[1], source_ip[0], dest_ip[3], dest_ip[2], dest_ip[1], dest_ip[0]);
-        //verdict = NF_ACCEPT;
-        verdict++;
+        verdict = NF_ACCEPT;
+        //verdict++;
         memcpy(address + 16, &verdict, 4);
         verdict_set_flag = 1;
         memcpy(address + 12, &verdict_set_flag, 4);
-        
+        ROUND_ROBIN_NUM++;
+        ROUND_ROBIN_NUM %= 25;
     }
 
     if (munmap(address, page_size))
