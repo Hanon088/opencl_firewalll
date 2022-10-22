@@ -11,5 +11,8 @@ ocl_firewall.ko
 Module.symvers
 modules.order
 cleanup_compilation
+cleanup
+nfq_test
 .ocl_firewall.o.d
 user
+out.txt
