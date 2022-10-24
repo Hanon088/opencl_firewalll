@@ -3,36 +3,38 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <linux/types.h>
-#include <linux/netfilter.h>		
+#include <linux/netfilter.h>
 #include <libnetfilter_queue/libnetfilter_queue.h>
 
-//uint32_t C99, u_int32_t POSIX Unix
-//gcc sample_libnfq.c -o nfq_test -lnetfilter_queue
+// uint32_t C99, u_int32_t POSIX Unix
+// gcc sample_libnfq.c -o nfq_test -lnetfilter_queue
 int packet_count = 0;
-static u_int32_t print_pkt (struct nfq_data *tb)
+static u_int32_t print_pkt(struct nfq_data *tb)
 {
 	int id = 0;
 	struct nfqnl_msg_packet_hdr *ph;
 	struct nfqnl_msg_packet_hw *hwph;
-	u_int32_t mark,ifi; 
+	u_int32_t mark, ifi;
 	int ret;
 	char *data;
 
 	ph = nfq_get_msg_packet_hdr(tb);
-	if (ph) {
+	if (ph)
+	{
 		id = ntohl(ph->packet_id);
 		printf("hw_protocol=0x%04x hook=%u id=%u ",
-			ntohs(ph->hw_protocol), ph->hook, id);
+			   ntohs(ph->hw_protocol), ph->hook, id);
 	}
 
 	hwph = nfq_get_packet_hw(tb);
-	if (hwph) {
+	if (hwph)
+	{
 		int i, hlen = ntohs(hwph->hw_addrlen);
 
 		printf("hw_src_addr=");
-		for (i = 0; i < hlen-1; i++)
+		for (i = 0; i < hlen - 1; i++)
 			printf("%02x:", hwph->hw_addr[i]);
-		printf("%02x ", hwph->hw_addr[hlen-1]);
+		printf("%02x ", hwph->hw_addr[hlen - 1]);
 	}
 
 	mark = nfq_get_nfmark(tb);
@@ -55,23 +57,23 @@ static u_int32_t print_pkt (struct nfq_data *tb)
 		printf("physoutdev=%u ", ifi);
 
 	ret = nfq_get_payload(tb, &data);
-	if (ret >= 0) {
+	if (ret >= 0)
+	{
 		printf("payload_len=%d ", ret);
-		//processPacketData (data, ret);
+		// processPacketData (data, ret);
 	}
 	fputc('\n', stdout);
 
 	return id;
 }
-	
 
 static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *nfa, void *data)
 {
 	u_int32_t id = print_pkt(nfa);
-	//u_int32_t id;
+	// u_int32_t id;
 
-        struct nfqnl_msg_packet_hdr *ph;
-	ph = nfq_get_msg_packet_hdr(nfa);	
+	struct nfqnl_msg_packet_hdr *ph;
+	ph = nfq_get_msg_packet_hdr(nfa);
 	id = ntohl(ph->packet_id);
 	printf("entering callback\n");
 	return nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
@@ -81,40 +83,46 @@ int main(int argc, char **argv)
 {
 	struct nfq_handle *h;
 	struct nfq_q_handle *qh;
+	// may need multiple buffers for multiple queue?
 	int fd;
 	int rv;
-	char buf[4096] __attribute__ ((aligned));
+	char buf[4096] __attribute__((aligned));
 
 	printf("opening library handle\n");
 	h = nfq_open();
-	if (!h) {
+	if (!h)
+	{
 		fprintf(stderr, "error during nfq_open()\n");
 		exit(1);
 	}
 
 	printf("unbinding existing nf_queue handler for AF_INET (if any)\n");
-	if (nfq_unbind_pf(h, AF_INET) < 0) {
+	if (nfq_unbind_pf(h, AF_INET) < 0)
+	{
 		fprintf(stderr, "error during nfq_unbind_pf()\n");
 		exit(1);
 	}
 
 	printf("binding nfnetlink_queue as nf_queue handler for AF_INET\n");
-	if (nfq_bind_pf(h, AF_INET) < 0) {
+	if (nfq_bind_pf(h, AF_INET) < 0)
+	{
 		fprintf(stderr, "error during nfq_bind_pf()\n");
 		exit(1);
 	}
 
 	printf("binding this socket to queue '0'\n");
-	//add multiple queues?
-	qh = nfq_create_queue(h,  0, &cb, NULL);
-	if (!qh) {
+	// add multiple queues?
+	qh = nfq_create_queue(h, 0, &cb, NULL);
+	if (!qh)
+	{
 		fprintf(stderr, "error during nfq_create_queue()\n");
 		exit(1);
 	}
 
 	printf("setting copy_packet mode\n");
-	//maybe change the mode
-	if (nfq_set_mode(qh, NFQNL_COPY_PACKET, 0xffff) < 0) {
+	// maybe change the mode
+	if (nfq_set_mode(qh, NFQNL_COPY_PACKET, 0xffff) < 0)
+	{
 		fprintf(stderr, "can't set packet_copy mode\n");
 		exit(1);
 	}
@@ -125,7 +133,7 @@ int main(int argc, char **argv)
 
 	while ((rv = recv(fd, buf, sizeof(buf), 0)))
 	{
-		printf("pkt received %d\n", rv);
+		printf("pkt received %d\n", ++packet_count);
 		nfq_handle_packet(h, buf, rv);
 	}
 
