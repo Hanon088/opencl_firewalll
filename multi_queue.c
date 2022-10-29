@@ -12,7 +12,7 @@
 #include <libnetfilter_queue/libnetfilter_queue_ipv4.h>
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 
-long int packet_count = 0;
+// long int packet_count = 0;
 
 static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
@@ -65,20 +65,24 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
 
 int main()
 {
-    int fd;
-    int rcv_len;
-    char buf[4096] __attribute__((aligned));
-    struct nfq_handle *handler;
-    struct nfq_q_handle *queue;
+    int fd0, fd1;
+    int rcv_len0, rcv_len1;
+    char buf0[4096] __attribute__((aligned));
+    char buf1[4096] __attribute__((aligned));
+    struct nfq_handle *handler0, *handler1;
+    struct nfq_q_handle *queue0, *queue1;
 
-    handler = nfq_open();
+    // may need multiple handlers
+    handler0 = nfq_open();
+    handler1 = nfq_open();
 
-    if (!handler)
+    if (!handler0 && !handler1)
     {
         fprintf(stderr, "error during nfq_open()\n");
         exit(1);
     }
 
+    /*
     // unbinding existing nf_queue handler for AF_INET (if any)
     if (nfq_unbind_pf(handler, AF_INET) < 0)
     {
@@ -91,27 +95,32 @@ int main()
     {
         fprintf(stderr, "error during nfq_bind_pf()\n");
         exit(1);
-    }
+    }*/
 
-    queue = nfq_create_queue(handler, 0, netfilterCallback, NULL);
-    if (!queue)
+    queue0 = nfq_create_queue(handler0, 0, netfilterCallback, NULL);
+    queue1 = nfq_create_queue(handler1, 1, netfilterCallback, NULL);
+    if (!queue0 && !queue1)
     {
         fprintf(stderr, "error during nfq_create_queue()\n");
         exit(1);
     }
 
-    if (nfq_set_mode(queue, NFQNL_COPY_PACKET, 0xffff) < 0)
+    if (nfq_set_mode(queue0, NFQNL_COPY_PACKET, 0xffff) < 0 || nfq_set_mode(queue1, NFQNL_COPY_PACKET, 0xffff) < 0)
     {
         fprintf(stderr, "can't set packet_copy mode\n");
         exit(1);
     }
 
-    fd = nfq_fd(handler);
+    fd0 = nfq_fd(handler0);
+    fd1 = nfq_fd(handler1);
 
-    while ((rcv_len = recv(fd, buf, sizeof(buf), 0)))
+    while (1)
     {
-        printf("pkt received %ld\n", ++packet_count);
-        nfq_handle_packet(handler, buf, rcv_len);
+        rcv_len0 = recv(fd0, buf0, sizeof(buf0), 0);
+        rcv_len1 = recv(fd1, buf1, sizeof(buf1), 0);
+        // printf("pkt received %ld\n", ++packet_count);
+        nfq_handle_packet(handler0, buf0, rcv_len0);
+        nfq_handle_packet(handler1, buf1, rcv_len1);
     }
 
     nfq_destroy_queue(queue);
