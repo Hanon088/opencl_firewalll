@@ -65,16 +65,14 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
 
 int main()
 {
-    int fd; //fd1;
-    int rcv_len;//, rcv_len1;
+    int fd;
+    int rcv_len;
     char buf[4096] __attribute__((aligned));
-    //char buf1[4096] __attribute__((aligned));
-    struct nfq_handle *handler; //0, *handler1;
+    struct nfq_handle *handler;
     struct nfq_q_handle *queue0, *queue1;
 
     // may need multiple handlers
     handler = nfq_open();
-    //handler1 = nfq_open();
 
     if (!handler)
     {
@@ -112,20 +110,17 @@ int main()
     }
 
     fd = nfq_fd(handler);
-    //fd1 = nfq_fd(handler1);
 
     while (1)
     {
         rcv_len = recv(fd, buf, sizeof(buf), 0);
-        //rcv_len1 = recv(fd1, buf1, sizeof(buf1), 0);
+        // rcv_len1 = recv(fd1, buf1, sizeof(buf1), 0);
         printf("pkt received %ld\n", ++packet_count);
         nfq_handle_packet(handler, buf, rcv_len);
-        //nfq_handle_packet(handler1, buf1, rcv_len1);
     }
 
     nfq_destroy_queue(queue0);
     nfq_destroy_queue(queue1);
     nfq_close(handler);
-    //nfq_close(handler1);
     return 0;
 }
