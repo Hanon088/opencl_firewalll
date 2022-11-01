@@ -14,6 +14,18 @@
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 
 volatile long int packet_count = 0;
+struct recvStruct
+{
+    int fd;
+    struct nfq_handle *handler;
+    char *buf;
+};
+struct recvStruct argst1;//, argst2, argst3;
+struct nfq_handle *handler;
+int fd;
+char buft1[4096] __attribute__((aligned));
+char buft2[4096] __attribute__((aligned));
+char buft3[4096] __attribute__((aligned));
 
 static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
@@ -64,46 +76,34 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     return nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 }
 
-struct recvStruct
-{
-    int fd;
-    struct nfq_handle *handler;
-    char *buf;
-};
-
-int *recvThread(void *arguments)
+void *recvThread()
 {
     int rcv_len;
-    struct recvStruct *args = arguments;
 
     while (1)
     {
-        rcv_len = recv(args.fd, args.buf, sizeof(args.buf), MSG_DONTWAIT);
+        //printf("THREAD %p, %p \n", args -> buf, &(args->buf));
+        rcv_len = recv(argst1.fd, argst1.buf, sizeof(argst1.buf), MSG_DONTWAIT);
         /* Would multiple buffer do anything?
            Since recv would be using the same fd
         */
+        printf("%d\n", rcv_len);
         if (rcv_len < 0)
             continue;
         printf("pkt received %ld\n", ++packet_count);
         /* Is this asynchronous for each queue?
            Does the loop wait for packet handling to be done?
          */
-        nfq_handle_packet(args.handler, args.buf, rcv_len);
+        nfq_handle_packet(argst1.handler, argst1.buf, rcv_len);
     }
     return 0;
 }
 
 int main()
 {
-    int fd;
     int rcv_len;
-    char buft1[4096] __attribute__((aligned));
-    char buft2[4096] __attribute__((aligned));
-    char buft3[4096] __attribute__((aligned));
-    struct nfq_handle *handler;
     struct nfq_q_handle *queue;
     pthread_t t1, t2, t3;
-    struct recvStruct argst1, argst2, argst3;
 
     // may need multiple handlers
     handler = nfq_open();
@@ -148,19 +148,22 @@ int main()
     argst1.handler = handler;
     argst1.buf = buft1;
 
-    argst2.fd = fd;
+    /*argst2.fd = fd;
     argst2.handler = handler;
     argst2.buf = buft2;
 
     argst3.fd = fd;
     argst3.handler = handler;
-    argst3.buf = buft3;
-    pthread_create(&t1, NULL, recvThread, argst1);
-    pthread_create(&t2, NULL, recvThread, argst2);
-    pthread_create(&t3, NULL, recvThread, argst3);
+    argst3.buf = buft3;*/
+    pthread_create(&t1, NULL, recvThread, NULL);
+    //pthread_create(&t2, NULL, recvThread, (void* )&argst2);
+    //pthread_create(&t3, NULL, recvThread, (void* )&argst3);
 
     while (1)
     {
+        //printf("MAIN %p, %p \n", &buft1, argst1.buf);
+        /*printf("%p, %p |", &buft2, argst2.buf);
+        printf("%p, %p \n", &buft3, argst3.buf);*/
         continue;
     }
 
