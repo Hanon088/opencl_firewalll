@@ -19,22 +19,24 @@ struct ocl_buffer
 {
     uint32_t source_ip;
     uint32_t dest_ip;
-    uint32_t packet_id
-}
+    uint32_t packet_id;
+    struct nfq_q_handle *queue;
+};
 
 volatile struct ocl_buffer oclBuffer[32];
 volatile int bufferCount = 0;
 
-int appendBuffer(uint32_t sip, uint32_t dip, uint32_t packid)
+int appendBuffer(uint32_t sip, uint32_t dip, uint32_t packid, struct nfq_q_handle *queue)
 {
     oclBuffer[bufferCount].source_ip = sip;
     oclBuffer[bufferCount].dest_ip = dip;
-    oclBuffer[bufferCount].packet_ip = packid;
+    oclBuffer[bufferCount].packet_id = packid;
+    oclBuffer[bufferCount].queue = queue;
     bufferCount++;
     return 0;
 }
 
-static void netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
     int rcv_len;
     unsigned char *rawData;
@@ -80,7 +82,8 @@ static void netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
     dest_ip = ntohl(ip->daddr);
     printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
     pktb_free(pkBuff);
-    appendBuffer(source_ip, dest_ip, ph->packet_id);
+    appendBuffer(source_ip, dest_ip, ph->packet_id, queue);
+    return 0;
 }
 
 int main()
@@ -100,7 +103,7 @@ int main()
         exit(1);
     }
 
-    /*
+    
     // unbinding existing nf_queue handler for AF_INET (if any)
     if (nfq_unbind_pf(handler, AF_INET) < 0)
     {
@@ -113,7 +116,7 @@ int main()
     {
         fprintf(stderr, "error during nfq_bind_pf()\n");
         exit(1);
-    }*/
+    }
 
     queue0 = nfq_create_queue(handler, 0, netfilterCallback, NULL);
     queue1 = nfq_create_queue(handler, 1, netfilterCallback, NULL);
@@ -145,14 +148,16 @@ int main()
         /* Is this asynchronous for each queue?
            Does the loop wait for packet handling to be done?
          */
-        nfq_handle_packet(handler, buf, rcv_len);
 
+        nfq_handle_packet(handler, buf, rcv_len);
         if (bufferCount == 31)
         {
+            printf("AAAAAAAAAAAAAAA\n");
             for (int i = 0; i < 32; i++)
             {
-                nfq_set_verdict(queue, oclBuffer[i].packet_id, NF_ACCEPT, 0, NULL);
+                nfq_set_verdict(oclBuffer[i].queue, oclBuffer[i].packet_id, NF_ACCEPT, 0, NULL);
             }
+            bufferCount = 0;
         }
     }
 
