@@ -103,7 +103,6 @@ int main()
         exit(1);
     }
 
-    
     // unbinding existing nf_queue handler for AF_INET (if any)
     if (nfq_unbind_pf(handler, AF_INET) < 0)
     {
@@ -122,6 +121,7 @@ int main()
     queue1 = nfq_create_queue(handler, 1, netfilterCallback, NULL);
     /* The kernel may send this in parallel?
        How would the handle receive this? Sequentially?
+       Each queue seems to be processed asyncrhonously, try using multiple callback functions
      */
     if (!queue0 && !queue1)
     {
