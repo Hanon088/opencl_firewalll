@@ -69,7 +69,7 @@ int main()
     int rcv_len;
     char buf[4096] __attribute__((aligned));
     struct nfq_handle *handler;
-    struct nfq_q_handle *queue0, *queue1;
+    struct nfq_q_handle *queue;
 
     // may need multiple handlers
     handler = nfq_open();
@@ -95,18 +95,14 @@ int main()
         exit(1);
     }*/
 
-    queue0 = nfq_create_queue(handler, 0, netfilterCallback, NULL);
-    queue1 = nfq_create_queue(handler, 1, netfilterCallback, NULL);
-    /* The kernel may send this in parallel?
-       How would the handle receive this? Sequentially?
-     */
-    if (!queue0 && !queue1)
+    queue = nfq_create_queue(handler, 0, netfilterCallback, NULL);
+    if (!queue)
     {
         fprintf(stderr, "error during nfq_create_queue()\n");
         exit(1);
     }
 
-    if (nfq_set_mode(queue0, NFQNL_COPY_PACKET, 0xffff) < 0 || nfq_set_mode(queue1, NFQNL_COPY_PACKET, 0xffff) < 0)
+    if (nfq_set_mode(queue, NFQNL_COPY_PACKET, 0xffff) < 0)
     {
         fprintf(stderr, "can't set packet_copy mode\n");
         exit(1);
@@ -128,8 +124,7 @@ int main()
         nfq_handle_packet(handler, buf, rcv_len);
     }
 
-    nfq_destroy_queue(queue0);
-    nfq_destroy_queue(queue1);
+    nfq_destroy_queue(queue);
     nfq_close(handler);
     return 0;
 }
