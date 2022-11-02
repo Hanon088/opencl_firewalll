@@ -83,7 +83,8 @@ void *recvThread()
     while (1)
     {
         // printf("THREAD %p, %p \n", args -> buf, &(args->buf));
-        rcv_len = recv(argst1.fd, argst1.buf, sizeof(argst1.buf), MSG_DONTWAIT);
+        rcv_len = recv(fd, argst1.buf, sizeof(argst1.buf), 0);
+        // rcv_len = recv(fd, argst1.buf, sizeof(argst1.buf), MSG_DONTWAIT);
         /* Would multiple buffer do anything?
            Since recv would be using the same fd
         */
