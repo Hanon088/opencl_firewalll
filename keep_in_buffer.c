@@ -36,7 +36,7 @@ int appendBuffer(uint32_t sip, uint32_t dip, uint32_t packid, struct nfq_q_handl
     return 0;
 }
 
-static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
     int rcv_len;
     unsigned char *rawData;
@@ -82,7 +82,65 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     dest_ip = ntohl(ip->daddr);
     printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
     pktb_free(pkBuff);
-    appendBuffer(source_ip, dest_ip, ph->packet_id, queue);
+    // appendBuffer(source_ip, dest_ip, ph->packet_id, queue);
+    oclBuffer[0].source_ip = sip;
+    oclBuffer[0].dest_ip = dip;
+    oclBuffer[0].packet_id = packid;
+    oclBuffer[0].queue = queue;
+    return 0;
+}
+
+static int netfilterCallback1(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+{
+    int rcv_len;
+    unsigned char *rawData;
+    struct pkt_buff *pkBuff;
+    struct iphdr *ip;
+    struct nfqnl_msg_packet_hdr *ph = nfq_get_msg_packet_hdr(nfad);
+    uint32_t source_ip, dest_ip;
+    if (!ph)
+    {
+        fprintf(stderr, "Can't get packet header\n");
+        exit(1);
+    }
+
+    rawData = NULL;
+    rcv_len = nfq_get_payload(nfad, &rawData);
+    if (rcv_len < 0)
+    {
+        fprintf(stderr, "Can't get raw data\n");
+        exit(1);
+    }
+
+    pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0x1000);
+    if (!pkBuff)
+    {
+        fprintf(stderr, "Issue while pktb allocate\n");
+        exit(1);
+    }
+
+    ip = nfq_ip_get_hdr(pkBuff);
+    if (!ip)
+    {
+        fprintf(stderr, "Issue while ipv4 header parse\n");
+        exit(1);
+    }
+
+    /*if (nfq_ip_set_transport_header(pkBuff, ip) < 0)
+    {
+        fprintf(stderr, "Can't set transport header\n");
+        exit(1);
+    }*/
+
+    source_ip = ntohl(ip->saddr);
+    dest_ip = ntohl(ip->daddr);
+    printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
+    pktb_free(pkBuff);
+    // appendBuffer(source_ip, dest_ip, ph->packet_id, queue);
+    oclBuffer[1].source_ip = sip;
+    oclBuffer[1].dest_ip = dip;
+    oclBuffer[1].packet_id = packid;
+    oclBuffer[1].queue = queue;
     return 0;
 }
 
@@ -117,8 +175,8 @@ int main()
         exit(1);
     }
 
-    queue0 = nfq_create_queue(handler, 0, netfilterCallback, NULL);
-    queue1 = nfq_create_queue(handler, 1, netfilterCallback, NULL);
+    queue0 = nfq_create_queue(handler, 0, netfilterCallback0, NULL);
+    queue1 = nfq_create_queue(handler, 1, netfilterCallback1, NULL);
     /* The kernel may send this in parallel?
        How would the handle receive this? Sequentially?
        Each queue seems to be processed asyncrhonously, try using multiple callback functions
@@ -150,14 +208,11 @@ int main()
          */
 
         nfq_handle_packet(handler, buf, rcv_len);
-        if (bufferCount == 31)
+        if (oclBuffer[0].source_ip && oclBuffer[1].source_ip)
         {
-            printf("AAAAAAAAAAAAAAA\n");
-            for (int i = 0; i < 32; i++)
-            {
-                nfq_set_verdict(oclBuffer[i].queue, oclBuffer[i].packet_id, NF_ACCEPT, 0, NULL);
-            }
-            bufferCount = 0;
+            printf("VERDICT SET");
+            nfq_set_verdict(oclBuffer[0].queue, oclBuffer[0].packet_id, NF_ACCEPT, 0, NULL);
+            nfq_set_verdict(oclBuffer[1].queue, oclBuffer[1].packet_id, NF_ACCEPT, 0, NULL);
         }
     }
 
