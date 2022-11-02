@@ -23,7 +23,7 @@ struct ocl_buffer
     struct nfq_q_handle *queue;
 };
 
-volatile struct ocl_buffer oclBuffer[32];
+struct ocl_buffer oclBuffer[32];
 volatile int bufferCount = 0;
 
 int appendBuffer(uint32_t sip, uint32_t dip, uint32_t packid, struct nfq_q_handle *queue)
@@ -83,9 +83,9 @@ static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
     printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
     pktb_free(pkBuff);
     // appendBuffer(source_ip, dest_ip, ph->packet_id, queue);
-    oclBuffer[0].source_ip = sip;
-    oclBuffer[0].dest_ip = dip;
-    oclBuffer[0].packet_id = packid;
+    oclBuffer[0].source_ip = source_ip;
+    oclBuffer[0].dest_ip = dest_ip;
+    oclBuffer[0].packet_id = ph->packet_id;
     oclBuffer[0].queue = queue;
     return 0;
 }
@@ -137,9 +137,9 @@ static int netfilterCallback1(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
     printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
     pktb_free(pkBuff);
     // appendBuffer(source_ip, dest_ip, ph->packet_id, queue);
-    oclBuffer[1].source_ip = sip;
-    oclBuffer[1].dest_ip = dip;
-    oclBuffer[1].packet_id = packid;
+    oclBuffer[1].source_ip = source_ip;
+    oclBuffer[1].dest_ip = dest_ip;
+    oclBuffer[1].packet_id = ph->packet_id;
     oclBuffer[1].queue = queue;
     return 0;
 }
