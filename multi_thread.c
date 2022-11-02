@@ -20,7 +20,7 @@ struct recvStruct
     struct nfq_handle *handler;
     char *buf;
 };
-struct recvStruct argst1;//, argst2, argst3;
+struct recvStruct argst1; //, argst2, argst3;
 struct nfq_handle *handler;
 int fd;
 char buft1[4096] __attribute__((aligned));
@@ -82,7 +82,7 @@ void *recvThread()
 
     while (1)
     {
-        //printf("THREAD %p, %p \n", args -> buf, &(args->buf));
+        // printf("THREAD %p, %p \n", args -> buf, &(args->buf));
         rcv_len = recv(argst1.fd, argst1.buf, sizeof(argst1.buf), MSG_DONTWAIT);
         /* Would multiple buffer do anything?
            Since recv would be using the same fd
@@ -156,12 +156,12 @@ int main()
     argst3.handler = handler;
     argst3.buf = buft3;*/
     pthread_create(&t1, NULL, recvThread, NULL);
-    //pthread_create(&t2, NULL, recvThread, (void* )&argst2);
-    //pthread_create(&t3, NULL, recvThread, (void* )&argst3);
+    // pthread_create(&t2, NULL, recvThread, (void* )&argst2);
+    // pthread_create(&t3, NULL, recvThread, (void* )&argst3);
 
     while (1)
     {
-        //printf("MAIN %p, %p \n", &buft1, argst1.buf);
+        // printf("MAIN %p, %p \n", &buft1, argst1.buf);
         /*printf("%p, %p |", &buft2, argst2.buf);
         printf("%p, %p \n", &buft3, argst3.buf);*/
         continue;
