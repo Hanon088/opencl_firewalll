@@ -1,3 +1,11 @@
+/*
+One queue
+Multiple recv thread
+One verdict thread
+Store nfad as array of struct
+Wait for array to be full before sending verdict
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>

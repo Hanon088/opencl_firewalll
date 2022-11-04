@@ -1,3 +1,13 @@
+/*
+Multiple queue
+One recv loop
+One verdict thread
+Store nfad as array of linked list of struct, one linked list for each queue
+Send verdict as soon as all linked list has a next node
+
+Need full packets from iptables to be tested
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
