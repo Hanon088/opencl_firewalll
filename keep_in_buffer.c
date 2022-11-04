@@ -41,48 +41,51 @@ static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
 {
     struct callbackStruct *localBuff, *lastBuff;
     localBuff = malloc(sizeof(struct callbackStruct));
-    lastBuff = malloc(sizeof(struct callbackStruct));
+    lastBuff = NULL;
 
     localBuff->queue = queue;
     localBuff->nfad = nfad;
     localBuff->next = NULL;
 
-    if (!callbackStructArray[0]){
+    if (!callbackStructArray[0])
+    {
         callbackStructArray[0] = localBuff;
     }
-    else{
-    lastBuff = callbackStructArray[0];
-    while (lastBuff->next != NULL)
+    else
     {
-        lastBuff = lastBuff->next;
+        lastBuff = callbackStructArray[0];
+        while (lastBuff->next != NULL)
+        {
+            lastBuff = lastBuff->next;
+        }
+        lastBuff->next = localBuff;
     }
-    lastBuff->next = localBuff;
-    }
-
 
     return 0;
 }
 
 static int netfilterCallback1(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
-     struct callbackStruct *localBuff, *lastBuff;
+    struct callbackStruct *localBuff, *lastBuff;
     localBuff = malloc(sizeof(struct callbackStruct));
-    lastBuff = malloc(sizeof(struct callbackStruct));
+    lastBuff = NULL;
 
     localBuff->queue = queue;
     localBuff->nfad = nfad;
     localBuff->next = NULL;
 
-    if (!callbackStructArray[1]){
+    if (!callbackStructArray[1])
+    {
         callbackStructArray[1] = localBuff;
     }
-    else{
-    lastBuff = callbackStructArray[1];
-    while (lastBuff->next != NULL)
+    else
     {
-        lastBuff = lastBuff->next;
-    }
-    lastBuff->next = localBuff;
+        lastBuff = callbackStructArray[1];
+        while (lastBuff->next != NULL)
+        {
+            lastBuff = lastBuff->next;
+        }
+        lastBuff->next = localBuff;
     }
 
     return 0;
@@ -101,13 +104,15 @@ void *verdictThread()
     struct callbackStruct *tempNode;
     while (1)
     {
-        if (!(callbackStructArray[0]) && !(callbackStructArray[1])){
+        if (!(callbackStructArray[0]) && !(callbackStructArray[1]))
+        {
             continue;
-            }
+        }
 
-        if (!(callbackStructArray[0]->next) && !(callbackStructArray[1]->next)){
+        if (!(callbackStructArray[0]->next) && !(callbackStructArray[1]->next))
+        {
             continue;
-            }
+        }
         for (int i = 0; i < 2; i++)
         {
             queue = callbackStructArray[i]->queue;
