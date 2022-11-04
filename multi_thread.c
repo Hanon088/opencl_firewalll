@@ -13,32 +13,34 @@
 #include <libnetfilter_queue/libnetfilter_queue_ipv4.h>
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 
+#define cbSize 6
+
 volatile long int packet_count = 0;
 
 struct nfq_handle *handler;
 int fd;
-char buft0[4096] __attribute__((aligned));
-char buft1[4096] __attribute__((aligned));
-char buft2[4096] __attribute__((aligned));
+char bufrt0[4096] __attribute__((aligned));
+char bufrt1[4096] __attribute__((aligned));
+char bufrt2[4096] __attribute__((aligned));
 
 struct callbackStruct
 {
     struct nfq_q_handle *queue;
-    struct nfgenmsg *nfmsg;
+    //struct nfgenmsg *nfmsg;
     struct nfq_data *nfad;
-    void *data;
+    //void *data;
 };
 
-struct callbackStruct callbackArray[32];
+struct callbackStruct callbackArray[cbSize];
 volatile int callbackCount = 0;
 
 static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
     int localCount = callbackCount++;
     callbackArray[localCount].queue = queue;
-    callbackArray[localCount].nfmsg = nfmsg;
+    //callbackArray[localCount].nfmsg = nfmsg;
     callbackArray[localCount].nfad = nfad;
-    callbackArray[localCount].data = data;
+    //callbackArray[localCount].data = data;
     return 0;
 }
 
@@ -51,19 +53,19 @@ void *verdictThread()
     struct nfqnl_msg_packet_hdr *ph;
     uint32_t source_ip, dest_ip;
     struct nfq_q_handle *queue;
-    struct nfgenmsg *nfmsg;
+    //struct nfgenmsg *nfmsg;
     struct nfq_data *nfad;
-    void *data;
+    //void *data;
     while (1)
     {
-        if (callbackCount < 32)
+        if (callbackCount < cbSize)
             continue;
-        for (int i = 0; i < 32; i++)
+        for (int i = 0; i < cbSize; i++)
         {
             queue = callbackArray[i].queue;
-            nfmsg = callbackArray[i].nfmsg;
+            //nfmsg = callbackArray[i].nfmsg;
             nfad = callbackArray[i].nfad;
-            data = callbackArray[i].data;
+            //data = callbackArray[i].data;
 
             ph = nfq_get_msg_packet_hdr(nfad);
             if (!ph)
@@ -100,9 +102,9 @@ void *verdictThread()
             pktb_free(pkBuff);
             nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
             callbackArray[i].queue = NULL;
-            callbackArray[i].nfmsg = NULL;
+            //callbackArray[i].nfmsg = NULL;
             callbackArray[i].nfad = NULL;
-            callbackArray[i].data = NULL;
+            //callbackArray[i].data = NULL;
         }
         callbackCount = 0;
     }
@@ -114,11 +116,11 @@ void *recvThread0()
 
     while (1)
     {
-        if (callbackCount == 32)
+        if (callbackCount == cbSize)
             continue;
         // printf("THREAD %p, %p \n", args -> buf, &(args->buf));
-        rcv_len = recv(fd, buft0, sizeof(buft0), 0);
-        // rcv_len = recv(fd, argst1.buf, sizeof(argst1.buf), MSG_DONTWAIT);
+        rcv_len = recv(fd, bufrt0, sizeof(bufrt0), 0);
+        // rcv_len = recv(fd, argsrt1.buf, sizeof(argsrt1.buf), MSG_DONTWAIT);
         /* Would multiple buffer do anything?
            Since recv would be using the same fd
         */
@@ -129,7 +131,7 @@ void *recvThread0()
         /* Is this asynchronous for each queue?
            Does the loop wait for packet handling to be done?
          */
-        nfq_handle_packet(handler, buft0, rcv_len);
+        nfq_handle_packet(handler, bufrt0, rcv_len);
     }
     return 0;
 }
@@ -140,9 +142,11 @@ void *recvThread1()
 
     while (1)
     {
+        if (callbackCount == cbSize)
+            continue;
         // printf("THREAD %p, %p \n", args -> buf, &(args->buf));
-        rcv_len = recv(fd, buft1, sizeof(buft1), 0);
-        // rcv_len = recv(fd, argst1.buf, sizeof(argst1.buf), MSG_DONTWAIT);
+        rcv_len = recv(fd, bufrt1, sizeof(bufrt1), 0);
+        // rcv_len = recv(fd, argsrt1.buf, sizeof(argsrt1.buf), MSG_DONTWAIT);
         /* Would multiple buffer do anything?
            Since recv would be using the same fd
         */
@@ -153,7 +157,7 @@ void *recvThread1()
         /* Is this asynchronous for each queue?
            Does the loop wait for packet handling to be done?
          */
-        nfq_handle_packet(handler, buft1, rcv_len);
+        nfq_handle_packet(handler, bufrt1, rcv_len);
     }
     return 0;
 }
@@ -162,7 +166,8 @@ int main()
 {
     int rcv_len;
     struct nfq_q_handle *queue;
-    pthread_t t0, t1, t2;
+    pthread_t rt0, rt1, rt2;
+    pthread_t vt0, vt1, vt2;
 
     // may need multiple handlers
     handler = nfq_open();
@@ -203,14 +208,15 @@ int main()
 
     fd = nfq_fd(handler);
 
-    pthread_create(&t0, NULL, recvThread0, NULL);
-    // pthread_create(&t1, NULL, recvThread1, NULL);
+    pthread_create(&rt0, NULL, recvThread0, NULL);
+    //pthread_create(&rt1, NULL, recvThread1, NULL);
+    pthread_create(&vt0, NULL, verdictThread, NULL);
     //  pthread_create(&t3, NULL, recvThread, (void* )&argst3);
 
     while (1)
     {
-        // printf("MAIN %p, %p \n", &buft1, argst1.buf);
-        /*printf("%p, %p |", &buft2, argst2.buf);
+        // printf("MAIN %p, %p \n", &bufrt1, argsrt1.buf);
+        /*printf("%p, %p |", &bufrt2, argsrt2.buf);
         printf("%p, %p \n", &buft3, argst3.buf);*/
         continue;
     }
