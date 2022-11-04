@@ -31,7 +31,7 @@ static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
 {
     struct callbackStruct *localBuff, *lastBuff;
     localBuff = malloc(sizeof(struct callbackStruct));
-    lastBuff = malloc(sizeof(struct callbackStruct));
+    lastBuff = NULL;
 
     localBuff->queue = queue;
     localBuff->nfad = nfad;
@@ -42,32 +42,6 @@ static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
     }
     else{
     lastBuff = callbackStructArray[0];
-    while (lastBuff->next != NULL)
-    {
-        lastBuff = lastBuff->next;
-    }
-    lastBuff->next = localBuff;
-    }
-
-
-    return 0;
-}
-
-static int netfilterCallback1(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
-{
-     struct callbackStruct *localBuff, *lastBuff;
-    localBuff = malloc(sizeof(struct callbackStruct));
-    lastBuff = malloc(sizeof(struct callbackStruct));
-
-    localBuff->queue = queue;
-    localBuff->nfad = nfad;
-    localBuff->next = NULL;
-
-    if (!callbackStructArray[1]){
-        callbackStructArray[1] = localBuff;
-    }
-    else{
-    lastBuff = callbackStructArray[1];
     while (lastBuff->next != NULL)
     {
         lastBuff = lastBuff->next;
@@ -91,14 +65,14 @@ void *verdictThread()
     struct callbackStruct *tempNode;
     while (1)
     {
-        if (!(callbackStructArray[0]) && !(callbackStructArray[1])){
+        if (!(callbackStructArray[0])){
             continue;
             }
 
-        if (!(callbackStructArray[0]->next) && !(callbackStructArray[1]->next)){
+        if (!(callbackStructArray[0]->next)){
             continue;
             }
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 1; i++)
         {
             queue = callbackStructArray[i]->queue;
             nfad = callbackStructArray[i]->nfad;
@@ -156,7 +130,6 @@ int main()
     pthread_t vt;
 
     callbackStructArray[0] = NULL;
-    callbackStructArray[1] = NULL;
 
     handler = nfq_open();
 
@@ -181,18 +154,18 @@ int main()
     }
 
     queue0 = nfq_create_queue(handler, 0, netfilterCallback0, NULL);
-    queue1 = nfq_create_queue(handler, 1, netfilterCallback1, NULL);
+
     /* The kernel may send this in parallel?
        How would the handle receive this? Sequentially?
        Each queue seems to be processed asyncrhonously, try using multiple callback functions
      */
-    if (!queue0 && !queue1)
+    if (!queue0)
     {
         fprintf(stderr, "error during nfq_create_queue()\n");
         exit(1);
     }
 
-    if (nfq_set_mode(queue0, NFQNL_COPY_PACKET, 0xffff) < 0 || nfq_set_mode(queue1, NFQNL_COPY_PACKET, 0xffff) < 0)
+    if (nfq_set_mode(queue0, NFQNL_COPY_PACKET, 0xffff) < 0)
     {
         fprintf(stderr, "can't set packet_copy mode\n");
         exit(1);
@@ -209,7 +182,6 @@ int main()
     }
 
     nfq_destroy_queue(queue0);
-    nfq_destroy_queue(queue1);
     nfq_close(handler);
     return 0;
 }
