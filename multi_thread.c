@@ -21,53 +21,91 @@ char buft0[4096] __attribute__((aligned));
 char buft1[4096] __attribute__((aligned));
 char buft2[4096] __attribute__((aligned));
 
+struct callbackStruct
+{
+    struct nfq_q_handle *queue;
+    struct nfgenmsg *nfmsg;
+    struct nfq_data *nfad;
+    void *data;
+};
+
+struct callbackStruct callbackArray[32];
+volatile int callbackCount = 0;
+
 static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+{
+    int localCount = callbackCount++;
+    callbackArray[localCount].queue = queue;
+    callbackArray[localCount].nfmsg = nfmsg;
+    callbackArray[localCount].nfad = nfad;
+    callbackArray[localCount].data = data;
+    return 0;
+}
+
+void *verdictThread()
 {
     int rcv_len;
     unsigned char *rawData;
     struct pkt_buff *pkBuff;
     struct iphdr *ip;
-    struct nfqnl_msg_packet_hdr *ph = nfq_get_msg_packet_hdr(nfad);
+    struct nfqnl_msg_packet_hdr *ph;
     uint32_t source_ip, dest_ip;
-    if (!ph)
+    struct nfq_q_handle *queue;
+    struct nfgenmsg *nfmsg;
+    struct nfq_data *nfad;
+    void *data;
+    while (1)
     {
-        fprintf(stderr, "Can't get packet header\n");
-        exit(1);
+        if (callbackCount < 32)
+            continue;
+        for (int i = 0; i < 32; i++)
+        {
+            queue = callbackArray[i].queue;
+            nfmsg = callbackArray[i].nfmsg;
+            nfad = callbackArray[i].nfad;
+            data = callbackArray[i].data;
+
+            ph = nfq_get_msg_packet_hdr(nfad);
+            if (!ph)
+            {
+                fprintf(stderr, "Can't get packet header\n");
+                exit(1);
+            }
+
+            rawData = NULL;
+            rcv_len = nfq_get_payload(nfad, &rawData);
+            if (rcv_len < 0)
+            {
+                fprintf(stderr, "Can't get raw data\n");
+                exit(1);
+            }
+
+            pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0x1000);
+            if (!pkBuff)
+            {
+                fprintf(stderr, "Issue while pktb allocate\n");
+                exit(1);
+            }
+
+            ip = nfq_ip_get_hdr(pkBuff);
+            if (!ip)
+            {
+                fprintf(stderr, "Issue while ipv4 header parse\n");
+                exit(1);
+            }
+
+            source_ip = ntohl(ip->saddr);
+            dest_ip = ntohl(ip->daddr);
+            printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
+            pktb_free(pkBuff);
+            nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
+            callbackArray[i].queue = NULL;
+            callbackArray[i].nfmsg = NULL;
+            callbackArray[i].nfad = NULL;
+            callbackArray[i].data = NULL;
+        }
+        callbackCount = 0;
     }
-
-    rawData = NULL;
-    rcv_len = nfq_get_payload(nfad, &rawData);
-    if (rcv_len < 0)
-    {
-        fprintf(stderr, "Can't get raw data\n");
-        exit(1);
-    }
-
-    pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0x1000);
-    if (!pkBuff)
-    {
-        fprintf(stderr, "Issue while pktb allocate\n");
-        exit(1);
-    }
-
-    ip = nfq_ip_get_hdr(pkBuff);
-    if (!ip)
-    {
-        fprintf(stderr, "Issue while ipv4 header parse\n");
-        exit(1);
-    }
-
-    /*if (nfq_ip_set_transport_header(pkBuff, ip) < 0)
-    {
-        fprintf(stderr, "Can't set transport header\n");
-        exit(1);
-    }*/
-
-    source_ip = ntohl(ip->saddr);
-    dest_ip = ntohl(ip->daddr);
-    printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
-    pktb_free(pkBuff);
-    return nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 }
 
 void *recvThread0()
@@ -76,6 +114,8 @@ void *recvThread0()
 
     while (1)
     {
+        if (callbackCount == 32)
+            continue;
         // printf("THREAD %p, %p \n", args -> buf, &(args->buf));
         rcv_len = recv(fd, buft0, sizeof(buft0), 0);
         // rcv_len = recv(fd, argst1.buf, sizeof(argst1.buf), MSG_DONTWAIT);
@@ -164,8 +204,8 @@ int main()
     fd = nfq_fd(handler);
 
     pthread_create(&t0, NULL, recvThread0, NULL);
-    pthread_create(&t1, NULL, recvThread1, NULL);
-    // pthread_create(&t3, NULL, recvThread, (void* )&argst3);
+    // pthread_create(&t1, NULL, recvThread1, NULL);
+    //  pthread_create(&t3, NULL, recvThread, (void* )&argst3);
 
     while (1)
     {
