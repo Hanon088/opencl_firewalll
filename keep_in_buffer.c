@@ -28,10 +28,11 @@ long int packet_count = 0;
 // what if we can use pkt_buff instead
 struct callbackStruct
 {
+    // pointer to queue which packet is stored
     struct nfq_q_handle *queue;
-    // struct nfgenmsg *nfmsg;
+
+    // pointer to packet data in queue, not sure where it is stored
     struct nfq_data *nfad;
-    // void *data;
     struct callbackStruct *next;
 };
 
@@ -110,7 +111,7 @@ void *verdictThread()
         }
         break;
     }
-    
+
     while (1)
     {
 
@@ -121,8 +122,11 @@ void *verdictThread()
         for (int i = 0; i < 2; i++)
         {
             queue = callbackStructArray[i]->queue;
+
+            // where does nfad point to? A copy of user space buffer? kernel buffer?
             nfad = callbackStructArray[i]->nfad;
 
+            // packet header added by netfilter
             ph = nfq_get_msg_packet_hdr(nfad);
             if (!ph)
             {
@@ -131,6 +135,7 @@ void *verdictThread()
             }
 
             rawData = NULL;
+            // get packet data from nfad
             rcv_len = nfq_get_payload(nfad, &rawData);
             if (rcv_len < 0)
             {
@@ -138,6 +143,7 @@ void *verdictThread()
                 exit(1);
             }
 
+            // allocate user space buffer???
             pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0x1000);
             if (!pkBuff)
             {
@@ -223,6 +229,7 @@ int main()
 
     while (1)
     {
+        // Let's assume that buf is overwritten in each call
         rcv_len = recv(fd, buf, sizeof(buf), 0);
         printf("pkt received %ld\n", ++packet_count);
         nfq_handle_packet(handler, buf, rcv_len);
