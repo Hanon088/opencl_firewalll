@@ -54,7 +54,7 @@ static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
     else
     {
         lastBuff = callbackStructArray[0];
-        while (lastBuff->next != NULL)
+        while (lastBuff->next)
         {
             lastBuff = lastBuff->next;
         }
@@ -81,7 +81,7 @@ static int netfilterCallback1(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
     else
     {
         lastBuff = callbackStructArray[1];
-        while (lastBuff->next != NULL)
+        while (lastBuff->next)
         {
             lastBuff = lastBuff->next;
         }
@@ -104,12 +104,17 @@ void *verdictThread()
     struct callbackStruct *tempNode;
     while (1)
     {
-        if (!(callbackStructArray[0]) && !(callbackStructArray[1]))
+        if (!(callbackStructArray[0]) || !(callbackStructArray[1]))
         {
             continue;
         }
+        break;
+    }
+    
+    while (1)
+    {
 
-        if (!(callbackStructArray[0]->next) && !(callbackStructArray[1]->next))
+        if (!(callbackStructArray[0]->next) || !(callbackStructArray[1]->next))
         {
             continue;
         }
