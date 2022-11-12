@@ -33,7 +33,7 @@ int main()
     size_t local_size, global_size;
 
     //Data and Buffer
-    cl_mem packet_buffer, rule_buffer, output_buffer;
+    cl_mem packet_buffer, rule_buffer, mask_buffer, output_buffer;
     cl_int number_groups;
     uint32_t binary_ip; // input ip
     unsigned char string_ip[4];
@@ -44,25 +44,43 @@ int main()
     memcpy(&binary_ip, string_ip, 4);
     uint32_t arr_ip[10];// input ip array (uint32)
     uint32_t rule[1];// input rule (ip uint32)
-    uint32_t mask[1];// input mask (mask uint32) (working)
+    uint32_t mask[1];// input mask (mask uint32)
     bool result[10];// output array order
 
+    /* for example give array[10] of 192.168.0.100
+     * and set rule to 192.168.0.0/16 or 192.168.0.0 255.255.0.0
+     * and 1 item in array is 192.169.0.1 is out of subnet is number 4
+     * so first result is from CPU host device
+     * and second is result of opencl DEVICE
+     * result is array of bool
+     * */
     //initialize data copy ip and set rule(uint32_t array)
     for (int i=0; i<10; i++){
         arr_ip[i] = binary_ip;
     }
     // for example define all item == 192.168.0.100
-    string_ip[3] = (unsigned int) 0;
-    string_ip[2] = (unsigned int) 0;
+    string_ip[3] = (unsigned int) 192;
+    string_ip[2] = (unsigned int) 168;
     string_ip[1] = (unsigned int) 0;
     string_ip[0] = (unsigned int) 0;
-    memcpy(&rule[0], string_ip, 4); // define rule == 0.0.0.0
-    memcpy(&arr_ip[4], string_ip, 4); // define item number 4 to 0.0.0.0
+    memcpy(&rule[0], string_ip, 4); // define rule == 192.168.0.0
+
+    string_ip[3] = (unsigned int) 192;
+    string_ip[2] = (unsigned int) 169;
+    string_ip[1] = (unsigned int) 0;
+    string_ip[0] = (unsigned int) 1;
+    memcpy(&arr_ip[4], string_ip, 4); // define item number 4 to 192.169.0.1
+
+    string_ip[3] = (unsigned int) 255;
+    string_ip[2] = (unsigned int) 255;
+    string_ip[1] = (unsigned int) 0;
+    string_ip[0] = (unsigned int) 0;
+    memcpy(&mask[0], string_ip, 4);// define mask == 255.255.0.0
 
     //check rule ip on cpu
     bool test;
     for(int i = 0 ; i < 10 ; i ++){
-        test = arr_ip[i] == rule[0];
+        test = rule[0] == (arr_ip[i] & mask[0]);
         printf("%d : %d\n",i,test);
     }
     printf("%s : %u.%u.%u.%u\n", "rule" ,printable_ip(rule[0]));
@@ -90,6 +108,9 @@ int main()
     rule_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 1* sizeof(uint32_t), rule, &err);
     print_err(err);
 
+    mask_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 1* sizeof(uint32_t), mask, &err);
+    print_err(err);
+
     output_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, number_groups * sizeof(bool),  result, &err);
     print_err(err);
 
@@ -105,7 +126,9 @@ int main()
     print_err(err);
     err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &rule_buffer);
     print_err(err);
-    err |= clSetKernelArg(kernel, 2 ,sizeof(cl_mem), &output_buffer);
+    err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &mask_buffer);
+    print_err(err);
+    err |= clSetKernelArg(kernel, 3 ,sizeof(cl_mem), &output_buffer);
     print_err(err);
 
     //Enqueue kernel to device
