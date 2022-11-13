@@ -23,7 +23,7 @@
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 
 long int packet_count = 0;
-int fd;
+int netf_fd;
 int rcv_len;
 char buf[4096] __attribute__((aligned));
 struct nfq_handle *handler;
@@ -159,10 +159,10 @@ void *recvThread()
 
     while (1)
     {
-        rcv_len = recv(fd, buf, sizeof(buf), 0);
-        // rcv_len = recv(fd, argsrt1.buf, sizeof(argsrt1.buf), MSG_DONTWAIT);
+        rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
+        // rcv_len = recv(netf_fd, argsrt1.buf, sizeof(argsrt1.buf), MSG_DONTWAIT);
         /* Would multiple buffer do anything?
-           Since recv would be using the same fd
+           Since recv would be using the same netf_fd
         */
         if (rcv_len < 0)
             continue;
@@ -182,13 +182,7 @@ int main()
 
     int ip_array_size = 20;
     int rule_array_size = 4;
-    uint32_t binary_ip; // input ip
     unsigned char string_ip[4];
-    string_ip[3] = (unsigned int)192;
-    string_ip[2] = (unsigned int)168;
-    string_ip[1] = (unsigned int)0;
-    string_ip[0] = (unsigned int)100;
-    memcpy(&binary_ip, string_ip, 4);
     uint32_t array_ip_input[ip_array_size];       // input ip array (uint32)
     uint32_t rule_ip[rule_array_size];            // input rule_ip (ip uint32)
     uint32_t mask[rule_array_size];               // input mask (mask uint32)
@@ -209,26 +203,6 @@ int main()
         memcpy(&mask[i], string_ip, 4);
     }
 
-    /*for (int i=0; i<ip_array_size; i++) {
-        string_ip[3] = (unsigned int) 192;
-        string_ip[2] = (unsigned int) 168;
-        string_ip[1] = (unsigned int) 0;
-        string_ip[0] = (unsigned int) 1 + i;
-        memcpy(&binary_ip, string_ip, 4);
-        array_ip_input[i] = binary_ip;
-    }
-
-    string_ip[3] = (unsigned int)192;
-    string_ip[2] = (unsigned int)169;
-    string_ip[1] = (unsigned int)0;
-    string_ip[0] = (unsigned int)0;
-    memcpy(&array_ip_input[4], string_ip, 4); // define item number 4 to 192.169.0.1
-
-    string_ip[3] = (unsigned int)192;
-    string_ip[2] = (unsigned int)169;
-    string_ip[1] = (unsigned int)0;
-    string_ip[0] = (unsigned int)1;
-    memcpy(&array_ip_input[9], string_ip, 4);*/
     callbackStructArray[0] = NULL;
 
     handler = nfq_open();
@@ -271,8 +245,10 @@ int main()
         exit(1);
     }
 
-    fd = nfq_fd(handler);
+    netf_fd = nfq_fd(handler);
     // pthread_create(&vt, NULL, verdictThread, NULL);
+
+    printf("CREATING RCV THREAD\n");
     pthread_create(&rt, NULL, recvThread, NULL);
 
     // test with limited packet num first
@@ -280,24 +256,39 @@ int main()
     {
         continue;
     }
+    pthread_cancel(rt);
     pthread_join(rt, NULL);
+    printf("RECV THREAD KILLED\n");
 
+    int rcv_len;
+    unsigned char *rawData;
+    struct pkt_buff *pkBuff;
+    struct iphdr *ip;
+    struct nfqnl_msg_packet_hdr *ph;
+    uint32_t source_ip, dest_ip;
+    struct nfq_q_handle *queue;
+    struct nfq_data *nfad;
+    struct callbackStruct *tempNode;
+    tempNode = callbackStructArray[0];
     for (int i = 0; i < ip_array_size; i++)
     {
-        int rcv_len;
-        unsigned char *rawData;
-        struct pkt_buff *pkBuff;
-        struct iphdr *ip;
-        struct nfqnl_msg_packet_hdr *ph;
-        uint32_t source_ip, dest_ip;
-        struct nfq_q_handle *queue;
-        struct nfq_data *nfad;
-        struct callbackStruct *tempNode;
+        printf("At node %i\n", i);
+        
+        /*queue = callbackStructArray[0]->queue;
+        nfad = callbackStructArray[0]->nfad;*/
+        queue = tempNode->queue;
+        nfad = tempNode->nfad;
 
-        queue = callbackStructArray[0]->queue;
-        nfad = callbackStructArray[0]->nfad;
+        printf("At node %i p2\n", i);
+
+        if (!nfad || nfad == NULL)
+        {
+            fprintf(stderr, "What the nfad\n");
+            exit(1);
+        }
 
         ph = nfq_get_msg_packet_hdr(nfad);
+        printf("At node %i p3\n", i);
         if (!ph)
         {
             fprintf(stderr, "Can't get packet header\n");
@@ -306,6 +297,7 @@ int main()
 
         rawData = NULL;
         rcv_len = nfq_get_payload(nfad, &rawData);
+        printf("At node %i p4\n", i);
         if (rcv_len < 0)
         {
             fprintf(stderr, "Can't get raw data\n");
@@ -331,12 +323,16 @@ int main()
         pktb_free(pkBuff);
         nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 
-        tempNode = NULL;
-        tempNode = callbackStructArray[0]->next;
+        //tempNode = NULL;
+        if(!tempNode->next){}
+        else{
+        tempNode = tempNode->next;}
+        /*tempNode = callbackStructArray[0]->next;
         free(callbackStructArray[0]);
-        callbackStructArray[0] = tempNode;
+        callbackStructArray[0] = tempNode;*/
 
-        memcpy(&ip_array_size[i], &source_ip, 4);
+        //memcpy(&array_ip_input[i], &source_ip, 4);
+        array_ip_input[i] = source_ip;
     }
 
     nfq_destroy_queue(queue0);

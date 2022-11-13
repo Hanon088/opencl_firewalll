@@ -9,7 +9,5 @@ include_directories(.)
 add_executable(compare comparewithmask.c src/PrintErr.c src/CreateOCLStructure/DeviceCL.c)
 
 find_package(OpenCL REQUIRED)
-find_package(libnetfilter_queue REQUIRED)
-find_package(pthread REQUIRED)
 
-target_link_libraries(compare OpenCL::OpenCL)
+target_link_libraries(compare OpenCL::OpenCL -lnetfilter_queue -lpthread)
