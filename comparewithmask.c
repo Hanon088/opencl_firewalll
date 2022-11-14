@@ -247,8 +247,6 @@ int main()
 
     netf_fd = nfq_fd(handler);
     // pthread_create(&vt, NULL, verdictThread, NULL);
-
-    printf("CREATING RCV THREAD\n");
     pthread_create(&rt, NULL, recvThread, NULL);
 
     // test with limited packet num first
@@ -256,9 +254,6 @@ int main()
     {
         continue;
     }
-    pthread_cancel(rt);
-    pthread_join(rt, NULL);
-    printf("RECV THREAD KILLED\n");
 
     int rcv_len;
     unsigned char *rawData;
