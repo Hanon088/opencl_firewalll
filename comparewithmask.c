@@ -28,6 +28,14 @@ int rcv_len;
 char buf[4096] __attribute__((aligned));
 struct nfq_handle *handler;
 
+int ip_array_size = 20;
+int rule_array_size = 4;
+unsigned char string_ip[4];
+uint32_t array_ip_input[ip_array_size];       // input ip array (uint32)
+uint32_t rule_ip[rule_array_size];            // input rule_ip (ip uint32)
+uint32_t mask[rule_array_size];               // input mask (mask uint32)
+bool result[ip_array_size * rule_array_size]; // output array order
+
 // what if we can use pkt_buff instead
 struct callbackStruct
 {
@@ -153,6 +161,129 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
     return 0;
 }
 
+void *verdictThread()
+{
+    int rcv_len;
+    unsigned char *rawData;
+    struct pkt_buff *pkBuff;
+    struct iphdr *ip;
+    struct nfqnl_msg_packet_hdr *ph;
+    uint32_t source_ip, dest_ip;
+    struct nfq_q_handle *queue;
+    struct nfq_data *nfad;
+    struct callbackStruct *tempNode;
+
+    while (1)
+    {
+        if (!(callbackStructArray[0]))
+        {
+            continue;
+        }
+
+        if (!(callbackStructArray[0]->next))
+        {
+            continue;
+        }
+
+        if (packet_count < ip_array_size)
+        {
+            continue;
+        }
+
+        tempNode = callbackStructArray[0];
+        for (int i = 0; i < ip_array_size; i++)
+        {
+            printf("At node %i\n", i);
+
+            /*queue = callbackStructArray[0]->queue;
+            nfad = callbackStructArray[0]->nfad;*/
+            queue = tempNode->queue;
+            nfad = tempNode->nfad;
+
+            printf("At node %i p2\n", i);
+
+            if (!nfad || nfad == NULL)
+            {
+                fprintf(stderr, "What the nfad\n");
+                exit(1);
+            }
+
+            ph = nfq_get_msg_packet_hdr(nfad);
+            printf("At node %i p3\n", i);
+            if (!ph)
+            {
+                fprintf(stderr, "Can't get packet header\n");
+                exit(1);
+            }
+
+            rawData = NULL;
+            rcv_len = nfq_get_payload(nfad, &rawData);
+            printf("At node %i p4\n", i);
+            if (rcv_len < 0)
+            {
+                fprintf(stderr, "Can't get raw data\n");
+                exit(1);
+            }
+
+            pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0x1000);
+            if (!pkBuff)
+            {
+                fprintf(stderr, "Issue while pktb allocate\n");
+                exit(1);
+            }
+
+            ip = nfq_ip_get_hdr(pkBuff);
+            if (!ip)
+            {
+                fprintf(stderr, "Issue while ipv4 header parse\n");
+                exit(1);
+            }
+
+            source_ip = ntohl(ip->saddr);
+            dest_ip = ntohl(ip->daddr);
+            pktb_free(pkBuff);
+            nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
+
+            tempNode = callbackStructArray[0]->next;
+            free(callbackStructArray[0]);
+            callbackStructArray[0] = tempNode;
+
+            // memcpy(&array_ip_input[i], &source_ip, 4);
+            array_ip_input[i] = source_ip;
+        }
+
+        // check rule_ip ip on cpu
+        bool test;
+        for (int i = 0; i < rule_array_size; i++)
+        {
+            printf("%s %d: %u.%u.%u.%u mask : %u.%u.%u.%u\n", "rule_ip", i, printable_ip(rule_ip[i]), printable_ip(mask[i]));
+            ;
+        }
+        for (int i = 0; i < ip_array_size; i++)
+        {
+            for (int j = 0; j < rule_array_size; j++)
+            {
+                test = rule_ip[j] == (array_ip_input[i] & mask[j]);
+                printf("%d", test);
+                printf(" | %u.%u.%u.%u ", printable_ip(array_ip_input[i]));
+            }
+            printf("\n");
+        }
+
+        compare_with_mask(array_ip_input, rule_ip, mask, result, ip_array_size, rule_array_size);
+        for (int i = 0; i < sizeof(result) / sizeof(bool); i++)
+        {
+            printf("%d", result[i]);
+            if (i % rule_array_size == rule_array_size - 1)
+            {
+                printf("\n");
+            }
+        }
+
+        packet_count %= ip_array_size;
+    }
+}
+
 void *recvThread()
 {
     int rcv_len;
@@ -179,14 +310,6 @@ int main()
 {
     struct nfq_q_handle *queue0, *queue1;
     pthread_t vt, rt;
-
-    int ip_array_size = 20;
-    int rule_array_size = 4;
-    unsigned char string_ip[4];
-    uint32_t array_ip_input[ip_array_size];       // input ip array (uint32)
-    uint32_t rule_ip[rule_array_size];            // input rule_ip (ip uint32)
-    uint32_t mask[rule_array_size];               // input mask (mask uint32)
-    bool result[ip_array_size * rule_array_size]; // output array order
 
     // initialize data copy ip and set rule_ip(uint32_t array)
     for (int i = 0; i < rule_array_size; i++)
@@ -249,117 +372,13 @@ int main()
     // pthread_create(&vt, NULL, verdictThread, NULL);
     pthread_create(&rt, NULL, recvThread, NULL);
 
-    // test with limited packet num first
-    while (packet_count < ip_array_size)
+    while (1)
     {
         continue;
     }
 
-    int rcv_len;
-    unsigned char *rawData;
-    struct pkt_buff *pkBuff;
-    struct iphdr *ip;
-    struct nfqnl_msg_packet_hdr *ph;
-    uint32_t source_ip, dest_ip;
-    struct nfq_q_handle *queue;
-    struct nfq_data *nfad;
-    struct callbackStruct *tempNode;
-    tempNode = callbackStructArray[0];
-    for (int i = 0; i < ip_array_size; i++)
-    {
-        printf("At node %i\n", i);
-        
-        /*queue = callbackStructArray[0]->queue;
-        nfad = callbackStructArray[0]->nfad;*/
-        queue = tempNode->queue;
-        nfad = tempNode->nfad;
-
-        printf("At node %i p2\n", i);
-
-        if (!nfad || nfad == NULL)
-        {
-            fprintf(stderr, "What the nfad\n");
-            exit(1);
-        }
-
-        ph = nfq_get_msg_packet_hdr(nfad);
-        printf("At node %i p3\n", i);
-        if (!ph)
-        {
-            fprintf(stderr, "Can't get packet header\n");
-            exit(1);
-        }
-
-        rawData = NULL;
-        rcv_len = nfq_get_payload(nfad, &rawData);
-        printf("At node %i p4\n", i);
-        if (rcv_len < 0)
-        {
-            fprintf(stderr, "Can't get raw data\n");
-            exit(1);
-        }
-
-        pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0x1000);
-        if (!pkBuff)
-        {
-            fprintf(stderr, "Issue while pktb allocate\n");
-            exit(1);
-        }
-
-        ip = nfq_ip_get_hdr(pkBuff);
-        if (!ip)
-        {
-            fprintf(stderr, "Issue while ipv4 header parse\n");
-            exit(1);
-        }
-
-        source_ip = ntohl(ip->saddr);
-        dest_ip = ntohl(ip->daddr);
-        pktb_free(pkBuff);
-        nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
-
-        //tempNode = NULL;
-        if(!tempNode->next){}
-        else{
-        tempNode = tempNode->next;}
-        /*tempNode = callbackStructArray[0]->next;
-        free(callbackStructArray[0]);
-        callbackStructArray[0] = tempNode;*/
-
-        //memcpy(&array_ip_input[i], &source_ip, 4);
-        array_ip_input[i] = source_ip;
-    }
-
     nfq_destroy_queue(queue0);
     nfq_close(handler);
-
-    // check rule_ip ip on cpu
-    bool test;
-    for (int i = 0; i < rule_array_size; i++)
-    {
-        printf("%s %d: %u.%u.%u.%u mask : %u.%u.%u.%u\n", "rule_ip", i, printable_ip(rule_ip[i]), printable_ip(mask[i]));
-        ;
-    }
-    for (int i = 0; i < ip_array_size; i++)
-    {
-        for (int j = 0; j < rule_array_size; j++)
-        {
-            test = rule_ip[j] == (array_ip_input[i] & mask[j]);
-            printf("%d", test);
-            printf(" | %u.%u.%u.%u ", printable_ip(array_ip_input[i]));
-        }
-        printf("\n");
-    }
-
-    compare_with_mask(array_ip_input, rule_ip, mask, result, ip_array_size, rule_array_size);
-    for (int i = 0; i < sizeof(result) / sizeof(bool); i++)
-    {
-        printf("%d", result[i]);
-        if (i % rule_array_size == rule_array_size - 1)
-        {
-            printf("\n");
-        }
-    }
 
     return 0;
 }
