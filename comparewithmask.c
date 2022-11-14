@@ -369,8 +369,8 @@ int main()
     }
 
     netf_fd = nfq_fd(handler);
-    // pthread_create(&vt, NULL, verdictThread, NULL);
     pthread_create(&rt, NULL, recvThread, NULL);
+    pthread_create(&vt, NULL, verdictThread, NULL);
 
     while (1)
     {
