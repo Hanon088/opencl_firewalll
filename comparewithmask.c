@@ -22,14 +22,18 @@
 #include <libnetfilter_queue/libnetfilter_queue_ipv4.h>
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 
+#define ip_array_size 20
+#define rule_array_size 4
+
 long int packet_count = 0;
 int netf_fd;
 int rcv_len;
 char buf[4096] __attribute__((aligned));
 struct nfq_handle *handler;
 
-int ip_array_size = 20;
-int rule_array_size = 4;
+/*int ip_array_size = 20;
+int rule_array_size = 4;*/
+
 unsigned char string_ip[4];
 uint32_t array_ip_input[ip_array_size];       // input ip array (uint32)
 uint32_t rule_ip[rule_array_size];            // input rule_ip (ip uint32)
@@ -61,8 +65,11 @@ const char *func = "compare";
 static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
     struct callbackStruct *localBuff, *lastBuff;
-    localBuff = malloc(sizeof(struct callbackStruct));
+    localBuff = malloc(sizeof(struct callbackStruct*));
     lastBuff = NULL;
+
+    localBuff->queue = malloc(sizeof(struct nfq_q_handle*));
+    localBuff->nfad = malloc(sizeof(struct nfq_data*));
 
     localBuff->queue = queue;
     localBuff->nfad = nfad;
@@ -85,7 +92,7 @@ static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
     return 0;
 }
 
-int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t mask[], bool result[], int ip_array_size, int rule_array_size)
+int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t mask[], bool result[], int ip_arr_size, int rule_arr_size)
 {
     // opencl structures
     cl_device_id deviceId;
@@ -108,22 +115,22 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
     program = create_program_cl(context, deviceId, source);
 
     // define 10 workgroup 1 local workgroup
-    size_t global_size[] = {rule_array_size, ip_array_size};
+    size_t global_size[] = {rule_arr_size, ip_arr_size};
     size_t local_size[] = {1, 1};
     size_t global_offset[] = {0, 0};
 
     // create data_buffer for read and write
     // maybe move buffer and queue creation to another function? to optimise data flow
-    packet_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ip_array_size * sizeof(uint32_t), array_ip_input, &err);
+    packet_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ip_arr_size * sizeof(uint32_t), array_ip_input, &err);
     print_err(err);
 
-    rule_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_array_size * sizeof(uint32_t), rule_ip, &err);
+    rule_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_arr_size * sizeof(uint32_t), rule_ip, &err);
     print_err(err);
 
-    mask_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_array_size * sizeof(uint32_t), mask, &err);
+    mask_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_arr_size * sizeof(uint32_t), mask, &err);
     print_err(err);
 
-    output_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, rule_array_size * ip_array_size * sizeof(bool), result, &err);
+    output_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, rule_arr_size * ip_arr_size * sizeof(bool), result, &err);
     print_err(err);
 
     queue = clCreateCommandQueueWithProperties(context, deviceId, 0, &err);
@@ -148,7 +155,7 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
     print_err(err);
 
     // read result buffer in kernel
-    err = clEnqueueReadBuffer(queue, output_buffer, CL_TRUE, 0, ip_array_size * rule_array_size * sizeof(bool), result, 0, NULL, NULL);
+    err = clEnqueueReadBuffer(queue, output_buffer, CL_TRUE, 0, ip_arr_size * rule_arr_size * sizeof(bool), result, 0, NULL, NULL);
     print_err(err);
     // release resources
     clReleaseKernel(kernel);
