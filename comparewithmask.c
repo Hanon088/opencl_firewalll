@@ -76,9 +76,8 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     localBuff->nfad = nfad;
     localBuff->next = NULL;
 
-    printf("AAAAAAAAAA");
-    memcpy(queueNum, data, sizeof(int));
-    printf("%d\n", queueNum);
+    memcpy(&queueNum, (int *)data, sizeof(int));
+    printf("QUEUE NUM %d\n", queueNum);
 
     if (!callbackStructArray[queueNum])
     {
@@ -184,17 +183,25 @@ void *verdictThread()
     struct nfq_q_handle *queue;
     struct nfq_data *nfad;
     struct callbackStruct *tempNode;
+
     while (1)
     {
-        if (!(callbackStructArray[0]))
+        for (int i = 0; i < ip_array_size; i++)
         {
-            continue;
+            if (!(callbackStructArray[i]))
+            {
+                goto cnt;
+            }
         }
 
-        if (!(callbackStructArray[0]->next))
-        {
-            continue;
-        }
+        break;
+
+    cnt:;
+        continue;
+    }
+
+    while (1)
+    {
         for (int i = 0; i < ip_array_size; i++)
         {
             queue = callbackStructArray[i]->queue;
@@ -301,7 +308,7 @@ int main()
 {
     struct nfq_q_handle *queue[ip_array_size];
     pthread_t vt, rt;
-    int *queueNum;
+    int queueNum[ip_array_size];
 
     // initialize data copy ip and set rule_ip(uint32_t array)
     for (int i = 0; i < rule_array_size; i++)
@@ -349,7 +356,7 @@ int main()
     for (int i = 0; i < ip_array_size; i++)
     {
         memcpy(queueNum, &i, sizeof(int));
-        queue[i] = nfq_create_queue(handler, i, netfilterCallback, (void *)queueNum);
+        queue[i] = nfq_create_queue(handler, i, netfilterCallback, &queueNum[i]);
         if (!queue[i])
         {
             fprintf(stderr, "error during nfq_create_queue()\n");
@@ -374,7 +381,7 @@ int main()
 
     for (int i = 0; i < ip_array_size; i++)
     {
-    nfq_destroy_queue(queue[i]);
+        nfq_destroy_queue(queue[i]);
     }
     nfq_close(handler);
 
