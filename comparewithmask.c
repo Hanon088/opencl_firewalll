@@ -76,7 +76,9 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     localBuff->nfad = nfad;
     localBuff->next = NULL;
 
+    printf("AAAAAAAAAA");
     memcpy(queueNum, data, sizeof(int));
+    printf("%d\n", queueNum);
 
     if (!callbackStructArray[queueNum])
     {
@@ -370,7 +372,10 @@ int main()
         continue;
     }
 
-    nfq_destroy_queue(queue0);
+    for (int i = 0; i < ip_array_size; i++)
+    {
+    nfq_destroy_queue(queue[i]);
+    }
     nfq_close(handler);
 
     return 0;
