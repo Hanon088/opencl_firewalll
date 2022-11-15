@@ -19,3 +19,7 @@ out.txt
 mock_ip
 ut
 simple_cl
+compare
+CMakeCache.txt
+cmake_install.cmake
+CMakeFiles
