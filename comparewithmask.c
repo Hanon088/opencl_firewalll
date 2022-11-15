@@ -204,6 +204,14 @@ void *verdictThread()
     {
         for (int i = 0; i < ip_array_size; i++)
         {
+            if (!(callbackStructArray[i]->next))
+            {
+                goto cnt;
+            }
+        }
+
+        for (int i = 0; i < ip_array_size; i++)
+        {
             queue = callbackStructArray[i]->queue;
             nfad = callbackStructArray[i]->nfad;
 
