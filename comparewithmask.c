@@ -22,7 +22,7 @@
 #include <libnetfilter_queue/libnetfilter_queue_ipv4.h>
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 
-#define ip_array_size 20
+#define ip_array_size 10
 #define rule_array_size 4
 
 long int packet_count = 0;
@@ -360,10 +360,9 @@ int main()
         exit(1);
     }
 
-    queueNum = malloc(sizeof(int));
     for (int i = 0; i < ip_array_size; i++)
     {
-        memcpy(queueNum, &i, sizeof(int));
+        queueNum[i] = i;
         queue[i] = nfq_create_queue(handler, i, netfilterCallback, &queueNum[i]);
         if (!queue[i])
         {
