@@ -50,7 +50,7 @@ struct callbackStruct
     struct callbackStruct *next;
 };
 
-struct callbackStruct *callbackStructArray[2];
+struct callbackStruct *callbackStructArray[ip_array_size];
 
 const char *source = "C:\\Users\\User\\opencl_firewalll\\compare.cl";
 const char *func = "compare";
@@ -62,26 +62,29 @@ const char *func = "compare";
         ((unsigned char *)&addr)[1], \
         ((unsigned char *)&addr)[0]
 
-static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
+    int queueNum;
     struct callbackStruct *localBuff, *lastBuff;
-    localBuff = malloc(sizeof(struct callbackStruct*));
+    localBuff = malloc(sizeof(struct callbackStruct *));
     lastBuff = NULL;
 
-    localBuff->queue = malloc(sizeof(struct nfq_q_handle*));
-    localBuff->nfad = malloc(sizeof(struct nfq_data*));
+    localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
+    localBuff->nfad = malloc(sizeof(struct nfq_data *));
 
     localBuff->queue = queue;
     localBuff->nfad = nfad;
     localBuff->next = NULL;
 
-    if (!callbackStructArray[0])
+    memcpy(queueNum, data, sizeof(int));
+
+    if (!callbackStructArray[queueNum])
     {
-        callbackStructArray[0] = localBuff;
+        callbackStructArray[queueNum] = localBuff;
     }
     else
     {
-        lastBuff = callbackStructArray[0];
+        lastBuff = callbackStructArray[queueNum];
         while (lastBuff->next != NULL)
         {
             lastBuff = lastBuff->next;
@@ -179,7 +182,6 @@ void *verdictThread()
     struct nfq_q_handle *queue;
     struct nfq_data *nfad;
     struct callbackStruct *tempNode;
-
     while (1)
     {
         if (!(callbackStructArray[0]))
@@ -191,32 +193,12 @@ void *verdictThread()
         {
             continue;
         }
-
-        if (packet_count < ip_array_size)
-        {
-            continue;
-        }
-
-        tempNode = callbackStructArray[0];
         for (int i = 0; i < ip_array_size; i++)
         {
-            printf("At node %i\n", i);
-
-            /*queue = callbackStructArray[0]->queue;
-            nfad = callbackStructArray[0]->nfad;*/
-            queue = tempNode->queue;
-            nfad = tempNode->nfad;
-
-            printf("At node %i p2\n", i);
-
-            if (!nfad || nfad == NULL)
-            {
-                fprintf(stderr, "What the nfad\n");
-                exit(1);
-            }
+            queue = callbackStructArray[i]->queue;
+            nfad = callbackStructArray[i]->nfad;
 
             ph = nfq_get_msg_packet_hdr(nfad);
-            printf("At node %i p3\n", i);
             if (!ph)
             {
                 fprintf(stderr, "Can't get packet header\n");
@@ -225,7 +207,6 @@ void *verdictThread()
 
             rawData = NULL;
             rcv_len = nfq_get_payload(nfad, &rawData);
-            printf("At node %i p4\n", i);
             if (rcv_len < 0)
             {
                 fprintf(stderr, "Can't get raw data\n");
@@ -248,14 +229,15 @@ void *verdictThread()
 
             source_ip = ntohl(ip->saddr);
             dest_ip = ntohl(ip->daddr);
+            printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
             pktb_free(pkBuff);
             nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 
-            tempNode = callbackStructArray[0]->next;
-            free(callbackStructArray[0]);
-            callbackStructArray[0] = tempNode;
+            tempNode = NULL;
+            tempNode = callbackStructArray[i]->next;
+            free(callbackStructArray[i]);
+            callbackStructArray[i] = tempNode;
 
-            // memcpy(&array_ip_input[i], &source_ip, 4);
             array_ip_input[i] = source_ip;
         }
 
@@ -315,8 +297,9 @@ void *recvThread()
 
 int main()
 {
-    struct nfq_q_handle *queue0, *queue1;
+    struct nfq_q_handle *queue[ip_array_size];
     pthread_t vt, rt;
+    int *queueNum;
 
     // initialize data copy ip and set rule_ip(uint32_t array)
     for (int i = 0; i < rule_array_size; i++)
@@ -333,7 +316,10 @@ int main()
         memcpy(&mask[i], string_ip, 4);
     }
 
-    callbackStructArray[0] = NULL;
+    for (int i = 0; i < ip_array_size; i++)
+    {
+        callbackStructArray[i] = NULL;
+    }
 
     handler = nfq_open();
 
@@ -357,22 +343,22 @@ int main()
         exit(1);
     }
 
-    queue0 = nfq_create_queue(handler, 0, netfilterCallback0, NULL);
-
-    /* The kernel may send this in parallel?
-       How would the handle receive this? Sequentially?
-       Each queue seems to be processed asyncrhonously, try using multiple callback functions
-     */
-    if (!queue0)
+    queueNum = malloc(sizeof(int));
+    for (int i = 0; i < ip_array_size; i++)
     {
-        fprintf(stderr, "error during nfq_create_queue()\n");
-        exit(1);
-    }
+        memcpy(queueNum, &i, sizeof(int));
+        queue[i] = nfq_create_queue(handler, i, netfilterCallback, (void *)queueNum);
+        if (!queue[i])
+        {
+            fprintf(stderr, "error during nfq_create_queue()\n");
+            exit(1);
+        }
 
-    if (nfq_set_mode(queue0, NFQNL_COPY_PACKET, 0xffff) < 0)
-    {
-        fprintf(stderr, "can't set packet_copy mode\n");
-        exit(1);
+        if (nfq_set_mode(queue[i], NFQNL_COPY_PACKET, 0xffff) < 0)
+        {
+            fprintf(stderr, "can't set packet_copy mode\n");
+            exit(1);
+        }
     }
 
     netf_fd = nfq_fd(handler);
