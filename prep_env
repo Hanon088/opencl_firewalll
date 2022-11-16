@@ -1,0 +1,8 @@
+iptables -I INPUT -p tcp -m tcp --dport 80 -j NFQUEUE --queue-balance 0:5
+iptables -I INPUT -p icmp -j NFQUEUE --queue-balance 0:5
+iptables -I OUTPUT -p tcp -m tcp --dport 80 -j NFQUEUE --queue-balance 0:5
+iptables -I OUTPUT -p icmp -j NFQUEUE --queue-balance 0:5
+/bin/sh -ec "nping -c 100 -icmp www.google.com" 
+/bin/sh -ec "nping -c 100 -icmp www.bing.com"
+/bin/sh -ec "nping -c 100 -p 80 www.google.com" 
+/bin/sh -ec "nping -c 100 -p 80 www.bing.com" 

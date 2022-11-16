@@ -22,7 +22,7 @@
 #include <libnetfilter_queue/libnetfilter_queue_ipv4.h>
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 
-#define ip_array_size 10
+#define ip_array_size 5
 #define rule_array_size 4
 
 long int packet_count = 0;
@@ -52,7 +52,7 @@ struct callbackStruct
 
 struct callbackStruct *callbackStructArray[ip_array_size];
 
-const char *source = "C:\\Users\\User\\opencl_firewalll\\compare.cl";
+const char *source = "/home/tanate/github/opencl_firewalll/compare.cl";
 const char *func = "compare";
 
 // example value
@@ -210,6 +210,8 @@ void *verdictThread()
             }
         }
 
+        printf("\n\n\nSTARTING OCL PREP\n\n\n");
+
         for (int i = 0; i < ip_array_size; i++)
         {
             queue = callbackStructArray[i]->queue;
@@ -317,6 +319,7 @@ int main()
     struct nfq_q_handle *queue[ip_array_size];
     pthread_t vt, rt;
     int queueNum[ip_array_size];
+    struct callbackStruct *tempNode;
 
     // initialize data copy ip and set rule_ip(uint32_t array)
     for (int i = 0; i < rule_array_size; i++)
@@ -389,6 +392,17 @@ int main()
     for (int i = 0; i < ip_array_size; i++)
     {
         nfq_destroy_queue(queue[i]);
+        tempNode = callbackStructArray[i];
+        if(!tempNode){
+            continue;
+        }
+        while (tempNode->next != NULL)
+        {
+            tempNode = tempNode->next;
+            free(callbackStructArray[i]);
+            callbackStructArray[i] = tempNode;
+        }
+        
     }
     nfq_close(handler);
 

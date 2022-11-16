@@ -1,0 +1,4 @@
+iptables -D INPUT -p tcp -m tcp --dport 80 -j NFQUEUE --queue-balance 0:5
+iptables -D INPUT -p icmp -j NFQUEUE --queue-balance 0:5
+iptables -D OUTPUT -p tcp -m tcp --dport 80 -j NFQUEUE --queue-balance 0:5
+iptables -D OUTPUT -p icmp -j NFQUEUE --queue-balance 0:5
