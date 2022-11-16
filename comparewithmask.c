@@ -288,7 +288,7 @@ void *verdictThread()
             }
         }
 
-        packet_count %= ip_array_size;
+        //packet_count %= ip_array_size;
     }
 }
 
