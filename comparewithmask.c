@@ -69,8 +69,8 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     localBuff = malloc(sizeof(struct callbackStruct *));
     // lastBuff = NULL;
 
-    /*localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
-    localBuff->nfad = malloc(sizeof(struct nfq_data *));*/
+    localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
+    localBuff->nfad = malloc(sizeof(struct nfq_data *));
 
     // are we sure these are passed through to global var?
     localBuff->queue = queue;
