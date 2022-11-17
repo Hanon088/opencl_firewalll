@@ -28,7 +28,7 @@
 long int packet_count = 0;
 int netf_fd;
 int rcv_len;
-char buf[4096] __attribute__((aligned));
+char buf[65536] __attribute__((aligned));
 struct nfq_handle *handler;
 
 /*int ip_array_size = 20;
@@ -288,7 +288,7 @@ void *verdictThread()
             }
         }
 
-        //packet_count %= ip_array_size;
+        // packet_count %= ip_array_size;
     }
 }
 
@@ -393,7 +393,8 @@ int main()
     {
         nfq_destroy_queue(queue[i]);
         tempNode = callbackStructArray[i];
-        if(!tempNode){
+        if (!tempNode)
+        {
             continue;
         }
         while (tempNode->next != NULL)
@@ -402,7 +403,6 @@ int main()
             free(callbackStructArray[i]);
             callbackStructArray[i] = tempNode;
         }
-        
     }
     nfq_close(handler);
 
