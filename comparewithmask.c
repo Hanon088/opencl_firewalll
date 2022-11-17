@@ -67,14 +67,15 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     int queueNum;
     struct callbackStruct *localBuff, *lastBuff;
     localBuff = malloc(sizeof(struct callbackStruct *));
-    lastBuff = NULL;
+    // lastBuff = NULL;
 
-    localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
-    localBuff->nfad = malloc(sizeof(struct nfq_data *));
+    /*localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
+    localBuff->nfad = malloc(sizeof(struct nfq_data *));*/
 
+    // are we sure these are passed through to global var?
     localBuff->queue = queue;
     localBuff->nfad = nfad;
-    localBuff->next = NULL;
+    // localBuff->next = NULL;
 
     memcpy(&queueNum, (int *)data, sizeof(int));
     printf("QUEUE NUM %d\n", queueNum);
@@ -86,7 +87,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     else
     {
         lastBuff = callbackStructArray[queueNum];
-        while (lastBuff->next != NULL)
+        while (lastBuff->next)
         {
             lastBuff = lastBuff->next;
         }
@@ -249,13 +250,18 @@ void *verdictThread()
             source_ip = ntohl(ip->saddr);
             dest_ip = ntohl(ip->daddr);
             printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
+
             pktb_free(pkBuff);
             nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 
-            tempNode = NULL;
-            tempNode = callbackStructArray[i]->next;
-            free(callbackStructArray[i]);
-            callbackStructArray[i] = tempNode;
+            if (callbackStructArray[i]->next)
+            {
+                tempNode = callbackStructArray[i]->next;
+                free(callbackStructArray[i]->queue);
+                free(callbackStructArray[i]->nfad);
+                free(callbackStructArray[i]);
+                callbackStructArray[i] = tempNode;
+            }
 
             array_ip_input[i] = source_ip;
         }
@@ -336,10 +342,10 @@ int main()
         memcpy(&mask[i], string_ip, 4);
     }
 
-    for (int i = 0; i < ip_array_size; i++)
+    /*for (int i = 0; i < ip_array_size; i++)
     {
         callbackStructArray[i] = NULL;
-    }
+    }*/
 
     handler = nfq_open();
 
