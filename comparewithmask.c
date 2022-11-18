@@ -41,17 +41,19 @@ uint32_t mask[rule_array_size];               // input mask (mask uint32)
 bool result[ip_array_size * rule_array_size]; // output array order
 
 // what if we can use pkt_buff instead
-struct callbackStruct
+typedef struct callbackStruct
 {
     struct nfq_q_handle *queue;
     // struct nfgenmsg *nfmsg;
     struct nfq_data *nfad;
     // void *data;
     struct callbackStruct *next;
-};
+} callbackStruct;
 
-struct callbackStruct *callbackStructArray[ip_array_size];
-struct callbackStruct *tailArray[ip_array_size];
+typedef _Atomic callbackStruct atomicCallbackStruct;
+
+atomicCallbackStruct *callbackStructArray[ip_array_size];
+atomicCallbackStruct *tailArray[ip_array_size];
 
 const char *source = "/home/tanate/github/opencl_firewalll/compare.cl";
 const char *func = "compare";
@@ -66,8 +68,8 @@ const char *func = "compare";
 static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
     int queueNum;
-    struct callbackStruct *localBuff, *lastBuff;
-    localBuff = malloc(sizeof(struct callbackStruct *));
+    atomicCallbackStruct *localBuff, *lastBuff;
+    localBuff = malloc(sizeof(atomicCallbackStruct *));
     lastBuff = NULL;
 
     localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
@@ -193,7 +195,7 @@ void *verdictThread()
     uint32_t source_ip, dest_ip;
     struct nfq_q_handle *queue;
     struct nfq_data *nfad;
-    struct callbackStruct *tempNode;
+    atomicCallbackStruct *tempNode;
 
     while (1)
     {
@@ -264,12 +266,13 @@ void *verdictThread()
             pktb_free(pkBuff);
             nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 
-            //does this help?
-            if(callbackStructArray[i]->next){
-            tempNode = NULL;
-            tempNode = callbackStructArray[i]->next;
-            free(callbackStructArray[i]);
-            callbackStructArray[i] = tempNode;
+            // does this help?
+            if (callbackStructArray[i]->next)
+            {
+                tempNode = NULL;
+                tempNode = callbackStructArray[i]->next;
+                free(callbackStructArray[i]);
+                callbackStructArray[i] = tempNode;
             }
 
             array_ip_input[i] = source_ip;
@@ -334,7 +337,7 @@ int main()
     struct nfq_q_handle *queue[ip_array_size];
     pthread_t vt, rt;
     int queueNum[ip_array_size];
-    struct callbackStruct *tempNode;
+    atomicCallbackStruct *tempNode;
 
     // initialize data copy ip and set rule_ip(uint32_t array)
     for (int i = 0; i < rule_array_size; i++)
