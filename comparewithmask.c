@@ -12,6 +12,9 @@
 #include <pthread.h>
 #include <linux/types.h>
 
+//c11
+#include <stdatomic.h>
+
 // nfq headers
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -69,15 +72,19 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
 {
     int queueNum;
     atomicCallbackStruct *localBuff, *lastBuff;
-    localBuff = malloc(sizeof(atomicCallbackStruct *));
+    localBuff = malloc(sizeof(atomicCallbackStruct));
     lastBuff = NULL;
 
-    localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
-    localBuff->nfad = malloc(sizeof(struct nfq_data *));
+    /*localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
+    localBuff->nfad = malloc(sizeof(struct nfq_data *));*/
 
+    atomic_store(localBuff->queue, queue);
+    atomic_store(localBuff->nfad, nfad);
+    /*
     localBuff->queue = queue;
     localBuff->nfad = nfad;
     localBuff->next = NULL;
+    */
 
     memcpy(&queueNum, (int *)data, sizeof(int));
     printf("QUEUE NUM %d\n", queueNum);
@@ -87,9 +94,9 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         callbackStructArray[queueNum] = localBuff;
         tailArray[queueNum] = localBuff;
     }
-    else if (!tailArray[queueNum]->next)
+    else if (atomic_compare_exchange_weak(tailArray[queueNum]->next, NULL, localBuff))
     {
-        tailArray[queueNum]->next = localBuff;
+        //tailArray[queueNum]->next = localBuff;
         tailArray[queueNum] = tailArray[queueNum]->next;
     }
     else
@@ -267,12 +274,10 @@ void *verdictThread()
             nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 
             // does this help?
-            if (callbackStructArray[i]->next)
+            tempNode = callbackStructArray[i];
+            if (atomic_compare_exchange_weak(callbackStructArray[i], tempNode, tempNode->next))
             {
-                tempNode = NULL;
-                tempNode = callbackStructArray[i]->next;
-                free(callbackStructArray[i]);
-                callbackStructArray[i] = tempNode;
+                free(tempNode);
             }
 
             array_ip_input[i] = source_ip;
