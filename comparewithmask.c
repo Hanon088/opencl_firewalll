@@ -66,7 +66,7 @@ const char *func = "compare";
 static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
     int queueNum;
-    _Atomic struct callbackStruct *localBuff, *lastBuff;
+    struct callbackStruct *localBuff, *lastBuff;
     localBuff = malloc(sizeof(struct callbackStruct *));
     lastBuff = NULL;
 
@@ -193,7 +193,7 @@ void *verdictThread()
     uint32_t source_ip, dest_ip;
     struct nfq_q_handle *queue;
     struct nfq_data *nfad;
-    _Atomic struct callbackStruct *tempNode;
+    struct callbackStruct *tempNode;
 
     while (1)
     {
