@@ -264,10 +264,13 @@ void *verdictThread()
             pktb_free(pkBuff);
             nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 
+            //does this help?
+            if(callbackStructArray[i]->next){
             tempNode = NULL;
             tempNode = callbackStructArray[i]->next;
             free(callbackStructArray[i]);
             callbackStructArray[i] = tempNode;
+            }
 
             array_ip_input[i] = source_ip;
         }
@@ -351,6 +354,7 @@ int main()
     for (int i = 0; i < ip_array_size; i++)
     {
         callbackStructArray[i] = NULL;
+        tailArray[i] = NULL;
     }
 
     handler = nfq_open();
