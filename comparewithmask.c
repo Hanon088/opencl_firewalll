@@ -12,9 +12,6 @@
 #include <pthread.h>
 #include <linux/types.h>
 
-// c11
-#include <stdatomic.h>
-
 // nfq headers
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -53,8 +50,8 @@ struct callbackStruct
     struct callbackStruct *next;
 };
 
-_Atomic struct callbackStruct *callbackStructArray[ip_array_size];
-_Atomic struct callbackStruct *tailArray[ip_array_size];
+struct callbackStruct *callbackStructArray[ip_array_size];
+struct callbackStruct *tailArray[ip_array_size];
 
 const char *source = "/home/tanate/github/opencl_firewalll/compare.cl";
 const char *func = "compare";
@@ -88,25 +85,23 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         callbackStructArray[queueNum] = localBuff;
         tailArray[queueNum] = localBuff;
     }
-    else if (atomic_compare_exchange_strong(tailArray[queueNum]->next, NULL, localBuff))
+    else if (!tailArray[queueNum]->next)
     {
-        // atomic_compare_exchange_strong(tailArray[queueNum]->next, NULL, localBuff);
-        //  tailArray[queueNum]->next = localBuff;
+        tailArray[queueNum]->next = localBuff;
         tailArray[queueNum] = tailArray[queueNum]->next;
     }
     else
     {
-
         // could this be causing trouble?
-        // lastBuff = callbackStructArray[queueNum];
+        lastBuff = callbackStructArray[queueNum];
 
         // what if lastBuff is freed by verdictThread before finding next?
-        /*while (lastBuff->next != NULL)
+        while (lastBuff->next != NULL)
         {
             lastBuff = lastBuff->next;
         }
         lastBuff->next = localBuff;
-        tailArray[queueNum] = localBuff;*/
+        tailArray[queueNum] = localBuff;
     }
 
     return 0;
@@ -269,12 +264,12 @@ void *verdictThread()
             pktb_free(pkBuff);
             nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 
-            // does this help?
+            //does this help?
+            if(callbackStructArray[i]->next){
             tempNode = NULL;
-            tempNode = callbackStructArray[i];
-            if (atomic_compare_exchange_strong(callbackStructArray[i], tempNode, tempNode->next))
-            {
-                free(tempNode);
+            tempNode = callbackStructArray[i]->next;
+            free(callbackStructArray[i]);
+            callbackStructArray[i] = tempNode;
             }
 
             array_ip_input[i] = source_ip;
