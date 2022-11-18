@@ -50,7 +50,7 @@ struct callbackStruct
     // struct nfgenmsg *nfmsg;
     struct nfq_data *nfad;
     // void *data;
-    _Atomic struct callbackStruct *next;
+    struct callbackStruct *next;
 };
 
 _Atomic struct callbackStruct *callbackStructArray[ip_array_size];
@@ -69,7 +69,7 @@ const char *func = "compare";
 static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
     int queueNum;
-    struct callbackStruct *localBuff, *lastBuff;
+    _Atomic struct callbackStruct *localBuff, *lastBuff;
     localBuff = malloc(sizeof(struct callbackStruct *));
     lastBuff = NULL;
 
@@ -88,9 +88,9 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         callbackStructArray[queueNum] = localBuff;
         tailArray[queueNum] = localBuff;
     }
-    else if (compare_exchange_strong(tailArray[queueNum]->next, NULL, localBuff);)
+    else if (atomic_compare_exchange_strong(tailArray[queueNum]->next, NULL, localBuff))
     {
-        // compare_exchange_strong(tailArray[queueNum]->next, NULL, localBuff);
+        // atomic_compare_exchange_strong(tailArray[queueNum]->next, NULL, localBuff);
         //  tailArray[queueNum]->next = localBuff;
         tailArray[queueNum] = tailArray[queueNum]->next;
     }
@@ -198,7 +198,7 @@ void *verdictThread()
     uint32_t source_ip, dest_ip;
     struct nfq_q_handle *queue;
     struct nfq_data *nfad;
-    struct callbackStruct *tempNode;
+    _Atomic struct callbackStruct *tempNode;
 
     while (1)
     {
@@ -272,7 +272,7 @@ void *verdictThread()
             // does this help?
             tempNode = NULL;
             tempNode = callbackStructArray[i];
-            if (compare_exchange_strong(callbackStructArray[i], tempNode, tempNode->next))
+            if (atomic_compare_exchange_strong(callbackStructArray[i], tempNode, tempNode->next))
             {
                 free(tempNode);
             }
