@@ -51,6 +51,7 @@ struct callbackStruct
 };
 
 struct callbackStruct *callbackStructArray[ip_array_size];
+struct callbackStruct *tailArray[ip_array_size];
 
 const char *source = "/home/tanate/github/opencl_firewalll/compare.cl";
 const char *func = "compare";
@@ -82,15 +83,25 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     if (!callbackStructArray[queueNum])
     {
         callbackStructArray[queueNum] = localBuff;
+        tailArray[queueNum] = localBuff;
+    }
+    else if (!tailArray[queueNum]->next)
+    {
+        tailArray[queueNum]->next = localBuff;
+        tailArray[queueNum] = tailArray[queueNum]->next;
     }
     else
     {
+        // could this be causing trouble?
         lastBuff = callbackStructArray[queueNum];
+
+        // what if lastBuff is freed by verdictThread before finding next?
         while (lastBuff->next != NULL)
         {
             lastBuff = lastBuff->next;
         }
         lastBuff->next = localBuff;
+        tailArray[queueNum] = localBuff;
     }
 
     return 0;
@@ -202,6 +213,7 @@ void *verdictThread()
 
     while (1)
     {
+        // is it enought to check that a next exists?
         for (int i = 0; i < ip_array_size; i++)
         {
             if (!(callbackStructArray[i]->next))
