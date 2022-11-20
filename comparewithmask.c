@@ -31,14 +31,14 @@ long int packet_count = 0;
 long int batch_num = 0;
 int netf_fd;
 int rcv_len;
-char buf[65536] __attribute__((aligned));
+char buf[0xffff] __attribute__((aligned));
 struct nfq_handle *handler;
 
 /*int ip_array_size = 20;
 int rule_array_size = 4;*/
 
 unsigned char string_ip[4];
-//uint32_t array_ip_input[ip_array_size];       // input ip array (uint32)
+// uint32_t array_ip_input[ip_array_size];       // input ip array (uint32)
 uint32_t rule_ip[rule_array_size];            // input rule_ip (ip uint32)
 uint32_t mask[rule_array_size];               // input mask (mask uint32)
 bool result[ip_array_size * rule_array_size]; // output array order
@@ -233,7 +233,7 @@ void *verdictThread()
     struct nfq_q_handle *queue;
     struct nfq_data *nfad;
     struct callbackStruct *tempNode;
-    uint32_t array_ip_input[ip_array_size];       // input ip array (uint32)
+    uint32_t array_ip_input[ip_array_size]; // input ip array (uint32)
 
     while (1)
     {
@@ -260,7 +260,7 @@ void *verdictThread()
             {
                 goto cnt;
             }
-            
+
             if (!(callbackStructArray[i]->next))
             {
                 goto cnt;
@@ -273,30 +273,31 @@ void *verdictThread()
         {
             queue = callbackStructArray[i]->queue;
             nfad = callbackStructArray[i]->nfad;
-            
-            while(!nfad){
-                err = pthread_mutex_lock(&mtx[i]);
-            if (err != 0)
-            {
-                fprintf(stderr, "pthread_mutex_lock fails\n");
-                exit(1);
-            }
-            if (callbackStructArray[i]->next)
-            {
-                tempNode = NULL;
-                tempNode = callbackStructArray[i]->next;
-                free(callbackStructArray[i]);
-                callbackStructArray[i] = tempNode;
-            }
-            err = pthread_mutex_unlock(&mtx[i]);
-            if (err != 0)
-            {
-                fprintf(stderr, "pthread_mutex_unlock fails\n");
-                exit(1);
-            }
 
-            queue = callbackStructArray[i]->queue;
-            nfad = callbackStructArray[i]->nfad;
+            while (!nfad)
+            {
+                err = pthread_mutex_lock(&mtx[i]);
+                if (err != 0)
+                {
+                    fprintf(stderr, "pthread_mutex_lock fails\n");
+                    exit(1);
+                }
+                if (callbackStructArray[i]->next)
+                {
+                    tempNode = NULL;
+                    tempNode = callbackStructArray[i]->next;
+                    free(callbackStructArray[i]);
+                    callbackStructArray[i] = tempNode;
+                }
+                err = pthread_mutex_unlock(&mtx[i]);
+                if (err != 0)
+                {
+                    fprintf(stderr, "pthread_mutex_unlock fails\n");
+                    exit(1);
+                }
+
+                queue = callbackStructArray[i]->queue;
+                nfad = callbackStructArray[i]->nfad;
             }
 
             ph = nfq_get_msg_packet_hdr(nfad);
@@ -314,8 +315,8 @@ void *verdictThread()
                 exit(1);
             }
 
-            //does pkBuff needs to be set to NULL first?
-            pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0x1000);
+            // does pkBuff needs to be set to NULL first?
+            pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, (0xffff - rcv_len) + 0xfff);
             if (!pkBuff)
             {
                 fprintf(stderr, "Issue while pktb allocate\n");
@@ -357,7 +358,7 @@ void *verdictThread()
             }
 
             array_ip_input[i] = source_ip;
-            //memcpy(array_ip_input[i], &source_ip, 4);
+            // memcpy(array_ip_input[i], &source_ip, 4);
         }
 
         // check rule_ip ip on cpu
@@ -440,7 +441,7 @@ int main()
     {
         callbackStructArray[i] = NULL;
         tailArray[i] = NULL;
-        mtx[i] = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+        mtx[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
     }
 
     handler = nfq_open();
