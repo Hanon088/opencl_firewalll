@@ -25,6 +25,8 @@
 #define ip_array_size 5
 #define rule_array_size 4
 
+static pthread_mutex_t mtx[ip_array_size];
+
 long int packet_count = 0;
 int netf_fd;
 int rcv_len;
@@ -65,7 +67,7 @@ const char *func = "compare";
 
 static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
-    int queueNum;
+    int queueNum, err;
     struct callbackStruct *localBuff, *lastBuff;
     localBuff = malloc(sizeof(struct callbackStruct *));
     lastBuff = NULL;
@@ -82,17 +84,47 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
 
     if (!callbackStructArray[queueNum])
     {
+        err = pthread_mutex_lock(&mtx[queueNum]);
+        if (err != 0)
+        {
+            fprintf(stderr, "pthread_mutex_lock fails\n");
+            exit(1);
+        }
         callbackStructArray[queueNum] = localBuff;
         tailArray[queueNum] = localBuff;
+        err = pthread_mutex_unlock(&mtx[queueNum]);
+        if (err != 0)
+        {
+            fprintf(stderr, "pthread_mutex_unlock fails\n");
+            exit(1);
+        }
     }
     else if (!tailArray[queueNum]->next)
     {
+        err = pthread_mutex_lock(&mtx[queueNum]);
+        if (err != 0)
+        {
+            fprintf(stderr, "pthread_mutex_lock fails\n");
+            exit(1);
+        }
         tailArray[queueNum]->next = localBuff;
         tailArray[queueNum] = tailArray[queueNum]->next;
+        err = pthread_mutex_unlock(&mtx[queueNum]);
+        if (err != 0)
+        {
+            fprintf(stderr, "pthread_mutex_unlock fails\n");
+            exit(1);
+        }
     }
     else
     {
         // could this be causing trouble?
+        err = pthread_mutex_lock(&mtx[queueNum]);
+        if (err != 0)
+        {
+            fprintf(stderr, "pthread_mutex_lock fails\n");
+            exit(1);
+        }
         lastBuff = callbackStructArray[queueNum];
 
         // what if lastBuff is freed by verdictThread before finding next?
@@ -102,6 +134,12 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         }
         lastBuff->next = localBuff;
         tailArray[queueNum] = localBuff;
+        err = pthread_mutex_unlock(&mtx[queueNum]);
+        if (err != 0)
+        {
+            fprintf(stderr, "pthread_mutex_unlock fails\n");
+            exit(1);
+        }
     }
 
     return 0;
@@ -185,7 +223,7 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
 
 void *verdictThread()
 {
-    int rcv_len;
+    int rcv_len, err;
     unsigned char *rawData;
     struct pkt_buff *pkBuff;
     struct iphdr *ip;
@@ -264,12 +302,25 @@ void *verdictThread()
             pktb_free(pkBuff);
             nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 
-            //does this help?
-            if(callbackStructArray[i]->next){
-            tempNode = NULL;
-            tempNode = callbackStructArray[i]->next;
-            free(callbackStructArray[i]);
-            callbackStructArray[i] = tempNode;
+            // does this help?
+            err = pthread_mutex_lock(&mtx[i]);
+            if (err != 0)
+            {
+                fprintf(stderr, "pthread_mutex_lock fails\n");
+                exit(1);
+            }
+            if (callbackStructArray[i]->next)
+            {
+                tempNode = NULL;
+                tempNode = callbackStructArray[i]->next;
+                free(callbackStructArray[i]);
+                callbackStructArray[i] = tempNode;
+            }
+            err = pthread_mutex_unlock(&mtx[i]);
+            if (err != 0)
+            {
+                fprintf(stderr, "pthread_mutex_unlock fails\n");
+                exit(1);
             }
 
             array_ip_input[i] = source_ip;
@@ -355,6 +406,7 @@ int main()
     {
         callbackStructArray[i] = NULL;
         tailArray[i] = NULL;
+        mtx[i] = PTHREAD_MUTEX_INITIALIZER;
     }
 
     handler = nfq_open();
