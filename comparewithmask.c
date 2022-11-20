@@ -313,6 +313,7 @@ void *verdictThread()
                 fprintf(stderr, "Can't get raw data\n");
                 exit(1);
             }
+            printf("RCV LEN %d\n", rcv_len);
 
             // does pkBuff needs to be set to NULL first?
             pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, (0xffff - rcv_len) + 0xfff);
@@ -325,7 +326,6 @@ void *verdictThread()
             ip = nfq_ip_get_hdr(pkBuff);
             if (!ip)
             {
-                printf("RCV LEN %d\n", rcv_len);
                 fprintf(stderr, "Issue while ipv4 header parse\n");
                 exit(1);
             }
@@ -366,7 +366,6 @@ void *verdictThread()
         for (int i = 0; i < rule_array_size; i++)
         {
             printf("%s %d: %u.%u.%u.%u mask : %u.%u.%u.%u\n", "rule_ip", i, printable_ip(rule_ip[i]), printable_ip(mask[i]));
-            ;
         }
         for (int i = 0; i < ip_array_size; i++)
         {
@@ -405,7 +404,7 @@ void *recvThread()
            Since recv would be using the same netf_fd
         */
 
-       //discarding everything that is smaller than minimum ip packet size
+        // discarding everything that is smaller than minimum ip packet size
         if (rcv_len < 21)
             continue;
         printf("pkt received %ld\n", ++packet_count);
