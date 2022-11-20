@@ -28,6 +28,7 @@
 static pthread_mutex_t mtx[ip_array_size];
 
 long int packet_count = 0;
+long int batch_num = 0;
 int netf_fd;
 int rcv_len;
 char buf[65536] __attribute__((aligned));
@@ -254,13 +255,18 @@ void *verdictThread()
         // is it enought to check that a next exists?
         for (int i = 0; i < ip_array_size; i++)
         {
+            if (!(callbackStructArray[i]))
+            {
+                goto cnt;
+            }
+            
             if (!(callbackStructArray[i]->next))
             {
                 goto cnt;
             }
         }
 
-        printf("\n\n\nSTARTING OCL PREP\n\n\n");
+        printf("\n\n\nSTARTING OCL PREP %ld\n\n\n", ++batch_num);
 
         for (int i = 0; i < ip_array_size; i++)
         {
@@ -406,7 +412,7 @@ int main()
     {
         callbackStructArray[i] = NULL;
         tailArray[i] = NULL;
-        mtx[i] = PTHREAD_MUTEX_INITIALIZER;
+        mtx[i] = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     }
 
     handler = nfq_open();
