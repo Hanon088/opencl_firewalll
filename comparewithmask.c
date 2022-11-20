@@ -30,7 +30,6 @@ static pthread_mutex_t mtx[ip_array_size];
 long int packet_count = 0;
 long int batch_num = 0;
 int netf_fd;
-int rcv_len;
 char buf[0xffff] __attribute__((aligned));
 struct nfq_handle *handler;
 
@@ -326,6 +325,7 @@ void *verdictThread()
             ip = nfq_ip_get_hdr(pkBuff);
             if (!ip)
             {
+                printf("RCV LEN %d\n", rcv_len);
                 fprintf(stderr, "Issue while ipv4 header parse\n");
                 exit(1);
             }
@@ -404,7 +404,9 @@ void *recvThread()
         /* Would multiple buffer do anything?
            Since recv would be using the same netf_fd
         */
-        if (rcv_len < 0)
+
+       //discarding everything that is smaller than minimum ip packet size
+        if (rcv_len < 21)
             continue;
         printf("pkt received %ld\n", ++packet_count);
         /* Is this asynchronous for each queue?
