@@ -69,11 +69,11 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
 {
     int queueNum, err;
     struct callbackStruct *localBuff, *lastBuff;
-    localBuff = malloc(sizeof(struct callbackStruct *));
+    localBuff = malloc(sizeof(struct callbackStruct));
     lastBuff = NULL;
 
-    localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
-    localBuff->nfad = malloc(sizeof(struct nfq_data *));
+    /*localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
+    localBuff->nfad = malloc(sizeof(struct nfq_data *));*/
 
     localBuff->queue = queue;
     localBuff->nfad = nfad;
@@ -379,11 +379,17 @@ void *verdictThread()
             if (callbackStructArray[i]->next)
             {
                 tempNode = NULL;
-                tempNode = callbackStructArray[i]->next;
+                /*tempNode = callbackStructArray[i]->next;
                 free(callbackStructArray[i]->queue);
                 free(callbackStructArray[i]->nfad);
                 free(callbackStructArray[i]);
-                callbackStructArray[i] = tempNode;
+                callbackStructArray[i] = tempNode;*/
+
+                tempNode = callbackStructArray[i];
+                callbackStructArray[i] = callbackStructArray[i]->next;
+                tempNode->queue = NULL;
+                tempNode->nfad = NULL;
+                free(tempNode);
                 packetNumInQ[i]--;
             }
             err = pthread_mutex_unlock(&mtx[i]);
