@@ -323,6 +323,7 @@ void *verdictThread()
             ph = nfq_get_msg_packet_hdr(nfad);
             if (!ph)
             {
+                printf("ph fails, GOING BACK IN LOOP\n");
                 goto get_next_in_q;
                 /*fprintf(stderr, "Can't get packet header\n");
                 exit(1);*/
@@ -332,6 +333,7 @@ void *verdictThread()
             rcv_len = nfq_get_payload(nfad, &rawData);
             if (rcv_len < 0)
             {
+                printf("get payload fails, GOING BACK IN LOOP\n");
                 nfq_set_verdict(queue, ntohl(ph->packet_id), NF_DROP, 0, NULL);
                 goto get_next_in_q;
                 /*fprintf(stderr, "Can't get raw data\n");
@@ -343,6 +345,7 @@ void *verdictThread()
             pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0xfff);
             if (!pkBuff)
             {
+                printf("pktBuff fails, GOING BACK IN LOOP\n");
                 nfq_set_verdict(queue, ntohl(ph->packet_id), NF_DROP, 0, NULL);
                 goto get_next_in_q;
                 /*fprintf(stderr, "Issue while pktb allocate\n");
@@ -352,6 +355,7 @@ void *verdictThread()
             ip = nfq_ip_get_hdr(pkBuff);
             if (!ip)
             {
+                printf("ip fails, GOING BACK IN LOOP\n");
                 nfq_set_verdict(queue, ntohl(ph->packet_id), NF_DROP, 0, NULL);
                 goto get_next_in_q;
                 /*
