@@ -307,7 +307,7 @@ void *verdictThread()
 
                 queue = callbackStructArray[i]->queue;
                 nfad = callbackStructArray[i]->nfad;
-                packetNumInQ[queueNum]--;
+                packetNumInQ[i]--;
             }
 
             ph = nfq_get_msg_packet_hdr(nfad);
@@ -376,7 +376,7 @@ void *verdictThread()
                 fprintf(stderr, "pthread_mutex_unlock fails\n");
                 exit(1);
             }
-            packetNumInQ[queueNum]--;
+            packetNumInQ[i]--;
 
             array_ip_input[i] = source_ip;
             // memcpy(array_ip_input[i], &source_ip, 4);
