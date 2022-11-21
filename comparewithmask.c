@@ -325,7 +325,7 @@ void *verdictThread()
                 printf("VERDICT THREAD - QUEUE NUM %d PACKET NUM %d\n", i, packetNumInQ[i]);
 
                 queue = callbackStructArray[i]->queue;
-                nfad = callbackStructArray[i]->nfad;
+                nf_address = callbackStructArray[i]->nfad;
             }
 
             printf("OUT OF NFAD LOOP, Q %p NFAD: %p\n", queue, nf_address);
