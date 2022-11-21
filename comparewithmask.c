@@ -300,9 +300,17 @@ void *verdictThread()
                 }
                 if (callbackStructArray[i]->next)
                 {
-                    tempNode = callbackStructArray[i]->next;
+                    tempNode = NULL;
+                    /*tempNode = callbackStructArray[i]->next;
                     free(callbackStructArray[i]);
                     callbackStructArray[i] = tempNode;
+                    packetNumInQ[i]--;*/
+
+                    tempNode = callbackStructArray[i];
+                    callbackStructArray[i] = callbackStructArray[i]->next;
+                    tempNode->queue = NULL;
+                    tempNode->nfad = NULL;
+                    free(tempNode);
                     packetNumInQ[i]--;
                 }
                 err = pthread_mutex_unlock(&mtx[i]);
