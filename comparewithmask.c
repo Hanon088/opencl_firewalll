@@ -318,6 +318,8 @@ void *verdictThread()
                 nfad = callbackStructArray[i]->nfad;
             }
 
+            printf("OUT OF NFAD LOOP\n");
+
             ph = nfq_get_msg_packet_hdr(nfad);
             if (!ph)
             {
