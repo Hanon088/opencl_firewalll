@@ -328,7 +328,7 @@ void *verdictThread()
                 nf_address = callbackStructArray[i]->nfad;
             }
 
-            printf("OUT OF NFAD LOOP, Q %p NFAD: %p\n", queue, nf_address);
+            printf("OUT OF NFAD LOOP, Q: %p NFAD: %p\n", queue, nf_address);
 
             ph = nfq_get_msg_packet_hdr(nf_address);
             if (!ph)
@@ -338,6 +338,8 @@ void *verdictThread()
                 /*fprintf(stderr, "Can't get packet header\n");
                 exit(1);*/
             }
+
+            printf("PACKET ID: %u\n", ntohl(ph->packet_id));
 
             rawData = NULL;
             rcv_len = nfq_get_payload(nf_address, &rawData);
