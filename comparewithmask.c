@@ -282,8 +282,6 @@ void *verdictThread()
             {
             get_next_in_q:;
 
-                printf("VERDICT THREAD - QUEUE NUM %d PACKET NUM %d\n", i, packetNumInQ[i]);
-
                 err = pthread_mutex_lock(&mtx[i]);
                 if (err != 0)
                 {
@@ -313,6 +311,8 @@ void *verdictThread()
                     fprintf(stderr, "pthread_mutex_unlock fails\n");
                     exit(1);
                 }
+
+                printf("VERDICT THREAD - QUEUE NUM %d PACKET NUM %d\n", i, packetNumInQ[i]);
 
                 queue = callbackStructArray[i]->queue;
                 nfad = callbackStructArray[i]->nfad;
