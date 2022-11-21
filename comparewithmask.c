@@ -80,7 +80,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     localBuff->next = NULL;
 
     memcpy(&queueNum, (int *)data, sizeof(int));
-    printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum]++);
+    printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum] + 1);
 
     if (!callbackStructArray[queueNum])
     {
@@ -92,6 +92,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         }
         callbackStructArray[queueNum] = localBuff;
         tailArray[queueNum] = localBuff;
+        packetNumInQ[queueNum]++;
         err = pthread_mutex_unlock(&mtx[queueNum]);
         if (err != 0)
         {
@@ -109,6 +110,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         }
         tailArray[queueNum]->next = localBuff;
         tailArray[queueNum] = tailArray[queueNum]->next;
+        packetNumInQ[queueNum]++;
         err = pthread_mutex_unlock(&mtx[queueNum]);
         if (err != 0)
         {
@@ -134,6 +136,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         }
         lastBuff->next = localBuff;
         tailArray[queueNum] = localBuff;
+        packetNumInQ[queueNum]++;
         err = pthread_mutex_unlock(&mtx[queueNum]);
         if (err != 0)
         {
@@ -273,9 +276,14 @@ void *verdictThread()
             queue = callbackStructArray[i]->queue;
             nfad = callbackStructArray[i]->nfad;
 
+            printf("VERDICT THREAD - QUEUE NUM %d PACKET NUM %d\n", i, packetNumInQ[i]);
+
             while (!nfad)
             {
             get_next_in_q:;
+
+                printf("VERDICT THREAD - QUEUE NUM %d PACKET NUM %d\n", i, packetNumInQ[i]);
+
                 err = pthread_mutex_lock(&mtx[i]);
                 if (err != 0)
                 {
@@ -297,6 +305,7 @@ void *verdictThread()
                     tempNode = callbackStructArray[i]->next;
                     free(callbackStructArray[i]);
                     callbackStructArray[i] = tempNode;
+                    packetNumInQ[i]--;
                 }
                 err = pthread_mutex_unlock(&mtx[i]);
                 if (err != 0)
@@ -307,7 +316,6 @@ void *verdictThread()
 
                 queue = callbackStructArray[i]->queue;
                 nfad = callbackStructArray[i]->nfad;
-                packetNumInQ[i]--;
             }
 
             ph = nfq_get_msg_packet_hdr(nfad);
@@ -369,6 +377,7 @@ void *verdictThread()
                 tempNode = callbackStructArray[i]->next;
                 free(callbackStructArray[i]);
                 callbackStructArray[i] = tempNode;
+                packetNumInQ[i]--;
             }
             err = pthread_mutex_unlock(&mtx[i]);
             if (err != 0)
@@ -376,7 +385,6 @@ void *verdictThread()
                 fprintf(stderr, "pthread_mutex_unlock fails\n");
                 exit(1);
             }
-            packetNumInQ[i]--;
 
             array_ip_input[i] = source_ip;
             // memcpy(array_ip_input[i], &source_ip, 4);
