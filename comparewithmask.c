@@ -233,7 +233,7 @@ void *verdictThread()
     struct nfqnl_msg_packet_hdr *ph;
     uint32_t source_ip, dest_ip;
     struct nfq_q_handle *queue;
-    struct nfq_data *nf_address;
+    //struct nfq_data *nf_address;
     struct callbackStruct *tempNode;
     uint32_t array_ip_input[ip_array_size]; // input ip array (uint32)
 
@@ -273,7 +273,7 @@ void *verdictThread()
 
         for (int i = 0; i < ip_array_size; i++)
         {
-            nf_address = NULL;
+            struct nfq_data *nf_address = NULL;
             queue = callbackStructArray[i]->queue;
             nf_address = callbackStructArray[i]->nfad;
 
