@@ -368,7 +368,6 @@ void *verdictThread()
             dest_ip = ntohl(ip->daddr);
             printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
             pktb_free(pkBuff);
-            nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 
             // does this help?
             err = pthread_mutex_lock(&mtx[i]);
@@ -381,6 +380,8 @@ void *verdictThread()
             {
                 tempNode = NULL;
                 tempNode = callbackStructArray[i]->next;
+                free(callbackStructArray[i]->queue);
+                free(callbackStructArray[i]->nfad);
                 free(callbackStructArray[i]);
                 callbackStructArray[i] = tempNode;
                 packetNumInQ[i]--;
@@ -392,6 +393,7 @@ void *verdictThread()
                 exit(1);
             }
 
+            nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
             array_ip_input[i] = source_ip;
             // memcpy(array_ip_input[i], &source_ip, 4);
         }
