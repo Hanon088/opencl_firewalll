@@ -25,8 +25,6 @@
 #define ip_array_size 5
 #define rule_array_size 4
 
-static pthread_mutex_t mtx[ip_array_size];
-
 long int packet_count = 0;
 long int batch_num = 0;
 int netf_fd;
@@ -54,6 +52,8 @@ struct callbackStruct
 
 struct callbackStruct *callbackStructArray[ip_array_size];
 struct callbackStruct *tailArray[ip_array_size];
+static pthread_mutex_t mtx[ip_array_size];
+static int packetNumInQ[ip_array_size];
 
 const char *source = "/home/tanate/github/opencl_firewalll/compare.cl";
 const char *func = "compare";
@@ -80,7 +80,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     localBuff->next = NULL;
 
     memcpy(&queueNum, (int *)data, sizeof(int));
-    printf("QUEUE NUM %d\n", queueNum);
+    printf("QUEUE NUM %d PACKET NUM %D\n", queueNum, packetNumInQ[queueNum]++);
 
     if (!callbackStructArray[queueNum])
     {
@@ -307,6 +307,7 @@ void *verdictThread()
 
                 queue = callbackStructArray[i]->queue;
                 nfad = callbackStructArray[i]->nfad;
+                packetNumInQ[queueNum]--;
             }
 
             ph = nfq_get_msg_packet_hdr(nfad);
@@ -375,6 +376,7 @@ void *verdictThread()
                 fprintf(stderr, "pthread_mutex_unlock fails\n");
                 exit(1);
             }
+            packetNumInQ[queueNum]--;
 
             array_ip_input[i] = source_ip;
             // memcpy(array_ip_input[i], &source_ip, 4);
@@ -462,6 +464,7 @@ int main()
         callbackStructArray[i] = NULL;
         tailArray[i] = NULL;
         mtx[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+        packetNumInQ[i] = 0;
     }
 
     handler = nfq_open();
