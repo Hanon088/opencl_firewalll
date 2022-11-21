@@ -275,15 +275,25 @@ void *verdictThread()
 
             while (!nfad)
             {
+            get_next_in_q:;
                 err = pthread_mutex_lock(&mtx[i]);
                 if (err != 0)
                 {
                     fprintf(stderr, "pthread_mutex_lock fails\n");
                     exit(1);
                 }
+                if (!callbackStructArray[i])
+                {
+                    err = pthread_mutex_unlock(&mtx[i]);
+                    if (err != 0)
+                    {
+                        fprintf(stderr, "pthread_mutex_unlock fails\n");
+                        exit(1);
+                    }
+                    goto get_next_in_q;
+                }
                 if (callbackStructArray[i]->next)
                 {
-                    tempNode = NULL;
                     tempNode = callbackStructArray[i]->next;
                     free(callbackStructArray[i]);
                     callbackStructArray[i] = tempNode;
@@ -302,32 +312,41 @@ void *verdictThread()
             ph = nfq_get_msg_packet_hdr(nfad);
             if (!ph)
             {
-                fprintf(stderr, "Can't get packet header\n");
-                exit(1);
+                goto get_next_in_q;
+                /*fprintf(stderr, "Can't get packet header\n");
+                exit(1);*/
             }
 
             rawData = NULL;
             rcv_len = nfq_get_payload(nfad, &rawData);
             if (rcv_len < 0)
             {
-                fprintf(stderr, "Can't get raw data\n");
-                exit(1);
+                nfq_set_verdict(queue, ntohl(ph->packet_id), NF_DROP, 0, NULL);
+                goto get_next_in_q;
+                /*fprintf(stderr, "Can't get raw data\n");
+                exit(1);*/
             }
             printf("RCV LEN %d\n", rcv_len);
 
             // does pkBuff needs to be set to NULL first?
-            pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, (0xffff - rcv_len) + 0xfff);
+            pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0xfff);
             if (!pkBuff)
             {
-                fprintf(stderr, "Issue while pktb allocate\n");
-                exit(1);
+                nfq_set_verdict(queue, ntohl(ph->packet_id), NF_DROP, 0, NULL);
+                goto get_next_in_q;
+                /*fprintf(stderr, "Issue while pktb allocate\n");
+                exit(1);*/
             }
 
             ip = nfq_ip_get_hdr(pkBuff);
             if (!ip)
             {
+                nfq_set_verdict(queue, ntohl(ph->packet_id), NF_DROP, 0, NULL);
+                goto get_next_in_q;
+                /*
                 fprintf(stderr, "Issue while ipv4 header parse\n");
                 exit(1);
+                */
             }
 
             source_ip = ntohl(ip->saddr);
