@@ -80,7 +80,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     localBuff->next = NULL;
 
     memcpy(&queueNum, (int *)data, sizeof(int));
-    printf("QUEUE NUM %d PACKET NUM %D\n", queueNum, packetNumInQ[queueNum]++);
+    printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum]++);
 
     if (!callbackStructArray[queueNum])
     {
