@@ -233,7 +233,7 @@ void *verdictThread()
     struct nfqnl_msg_packet_hdr *ph;
     uint32_t source_ip, dest_ip;
     struct nfq_q_handle *queue;
-    struct nfq_data *nfad;
+    struct nfq_data *nf_address;
     struct callbackStruct *tempNode;
     uint32_t array_ip_input[ip_array_size]; // input ip array (uint32)
 
@@ -273,14 +273,16 @@ void *verdictThread()
 
         for (int i = 0; i < ip_array_size; i++)
         {
+            nf_address = NULL;
             queue = callbackStructArray[i]->queue;
-            nfad = callbackStructArray[i]->nfad;
+            nf_address = callbackStructArray[i]->nfad;
 
             printf("VERDICT THREAD - QUEUE NUM %d PACKET NUM %d\n", i, packetNumInQ[i]);
 
-            while (!nfad)
+            while (!nf_address)
             {
             get_next_in_q:;
+                nf_address = NULL;
 
                 err = pthread_mutex_lock(&mtx[i]);
                 if (err != 0)
@@ -326,9 +328,9 @@ void *verdictThread()
                 nfad = callbackStructArray[i]->nfad;
             }
 
-            printf("OUT OF NFAD LOOP, Q %p NFAD: %p\n", queue, nfad);
+            printf("OUT OF NFAD LOOP, Q %p NFAD: %p\n", queue, nf_address);
 
-            ph = nfq_get_msg_packet_hdr(nfad);
+            ph = nfq_get_msg_packet_hdr(nf_address);
             if (!ph)
             {
                 printf("ph fails, GOING BACK IN LOOP\n");
@@ -338,7 +340,7 @@ void *verdictThread()
             }
 
             rawData = NULL;
-            rcv_len = nfq_get_payload(nfad, &rawData);
+            rcv_len = nfq_get_payload(nf_address, &rawData);
             if (rcv_len < 0)
             {
                 printf("get payload fails, GOING BACK IN LOOP\n");
