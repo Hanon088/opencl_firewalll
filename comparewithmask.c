@@ -326,7 +326,7 @@ void *verdictThread()
                 nfad = callbackStructArray[i]->nfad;
             }
 
-            printf("OUT OF NFAD LOOP\n");
+            printf("OUT OF NFAD LOOP, Q %p NFAD: %p\n", queue, nfad);
 
             ph = nfq_get_msg_packet_hdr(nfad);
             if (!ph)
