@@ -73,11 +73,11 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     lastBuff = NULL;
 
     // localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
-    localBuff->nfad = malloc(sizeof(struct nfq_data));
+    localBuff->nfad = malloc(sizeof(nfad));
 
     localBuff->queue = queue;
     // localBuff->nfad = nfad;
-    memcpy(localBuff->nfad, nfad, sizeof(struct nfq_data));
+    memcpy(localBuff->nfad, nfad, sizeof(nfad));
     localBuff->next = NULL;
 
     memcpy(&queueNum, (int *)data, sizeof(int));
