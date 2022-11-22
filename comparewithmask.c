@@ -72,11 +72,12 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     localBuff = malloc(sizeof(struct callbackStruct));
     lastBuff = NULL;
 
-    /*localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
-    localBuff->nfad = malloc(sizeof(struct nfq_data *));*/
+    // localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
+    localBuff->nfad = malloc(sizeof(struct nfq_data));
 
     localBuff->queue = queue;
-    localBuff->nfad = nfad;
+    // localBuff->nfad = nfad;
+    memcpy(localBuff->nfad, nfad, sizeof(struct nfq_data));
     localBuff->next = NULL;
 
     memcpy(&queueNum, (int *)data, sizeof(int));
@@ -233,7 +234,7 @@ void *verdictThread()
     struct nfqnl_msg_packet_hdr *ph;
     uint32_t source_ip, dest_ip;
     struct nfq_q_handle *queue;
-    //struct nfq_data *nf_address;
+    // struct nfq_data *nf_address;
     struct callbackStruct *tempNode;
     uint32_t array_ip_input[ip_array_size]; // input ip array (uint32)
 
@@ -311,7 +312,8 @@ void *verdictThread()
                     tempNode = callbackStructArray[i];
                     callbackStructArray[i] = callbackStructArray[i]->next;
                     tempNode->queue = NULL;
-                    tempNode->nfad = NULL;
+                    // tempNode->nfad = NULL;
+                    free(tempNode->nfad);
                     free(tempNode);
                     packetNumInQ[i]--;
                 }
@@ -400,7 +402,8 @@ void *verdictThread()
                 tempNode = callbackStructArray[i];
                 callbackStructArray[i] = callbackStructArray[i]->next;
                 tempNode->queue = NULL;
-                tempNode->nfad = NULL;
+                // tempNode->nfad = NULL;
+                free(tempNode->nfad);
                 free(tempNode);
                 packetNumInQ[i]--;
             }
