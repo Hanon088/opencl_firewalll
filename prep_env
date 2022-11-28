@@ -1,3 +1,4 @@
+./clean_env
 iptables -I INPUT -p tcp -m tcp --dport 80 -j NFQUEUE --queue-balance 0:5 --queue-cpu-fanout
 iptables -I INPUT -p icmp -j NFQUEUE --queue-balance 0:5 --queue-cpu-fanout
 iptables -I OUTPUT -p tcp -m tcp --dport 80 -j NFQUEUE --queue-balance 0:5 --queue-cpu-fanout
