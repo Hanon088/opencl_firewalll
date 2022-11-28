@@ -9,7 +9,7 @@ Send verdict as soon as all linked list has a next node
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-// #include <string.h>
+#include <string.h>
 #include <pthread.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -22,6 +22,10 @@ Send verdict as soon as all linked list has a next node
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 
 long int packet_count = 0;
+
+struct nfq_data{
+    struct nfattr **data;
+};
 
 // what if we can use pkt_buff instead
 struct callbackStruct
@@ -42,7 +46,13 @@ static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
     lastBuff = NULL;
 
     localBuff->queue = queue;
-    localBuff->nfad = nfad;
+    //localBuff->nfad = nfad;
+
+    localBuff->nfad = malloc(sizeof(nfad));
+    memcpy(localBuff->nfad, nfad, sizeof(nfad));
+    printf("NFAD LEN %hu NFAD TYPE %hu\n", ((struct nfattr ) **(nfad->data)).nfa_len & 0x7ff, ((struct nfattr ) **(nfad->data)).nfa_type & 0x7ff);
+    printf("NFAD LEN %hu NFAD TYPE %hu\n", (*(nfad->data))->nfa_len & 0x7ff, (*(nfad->data))->nfa_type & 0x7ff);
+    printf("NFAD LEN %hu NFAD TYPE %hu\n", (&(**(nfad->data)))->nfa_len & 0x7ff, (&(**(nfad->data)))->nfa_type & 0x7ff);
     localBuff->next = NULL;
 
     if (!callbackStructArray[0]){
@@ -117,6 +127,7 @@ void *verdictThread()
             source_ip = ntohl(ip->saddr);
             dest_ip = ntohl(ip->daddr);
             printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
+            printf("NFAD LEN %hu NFAD TYPE %hu\n", (*(struct nfattr **)nfad)->nfa_len & 0x7ff, (*(struct nfattr **)nfad)->nfa_type & 0x7ff);
             pktb_free(pkBuff);
             nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
 
