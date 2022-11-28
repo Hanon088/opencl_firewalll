@@ -45,12 +45,19 @@ static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg
     localBuff = malloc(sizeof(struct callbackStruct));
     lastBuff = NULL;
 
+    //uint16_t front, back;
+
     localBuff->queue = queue;
     //localBuff->nfad = nfad;
 
+    /*memcpy(&front, nfad->data, 2);
+    memcpy(&back, nfad->data + 2, 2);
+
+    printf("FRONT %hu BACK %hu\n", front & 0x7ff, back & 0x7ff);*/
+
     localBuff->nfad = malloc(sizeof(nfad));
     memcpy(localBuff->nfad, nfad, sizeof(nfad));
-    printf("NFAD LEN %hu NFAD TYPE %hu\n", ((struct nfattr ) **(nfad->data)).nfa_len & 0x7ff, ((struct nfattr ) **(nfad->data)).nfa_type & 0x7ff);
+    printf("NFAD LEN %hu NFAD TYPE %hu\n", ((struct nfattr ) **(nfad->data)).nfa_len , ((struct nfattr ) **(nfad->data)).nfa_type);
     printf("NFAD LEN %hu NFAD TYPE %hu\n", (*(nfad->data))->nfa_len & 0x7ff, (*(nfad->data))->nfa_type & 0x7ff);
     printf("NFAD LEN %hu NFAD TYPE %hu\n", (&(**(nfad->data)))->nfa_len & 0x7ff, (&(**(nfad->data)))->nfa_type & 0x7ff);
     localBuff->next = NULL;
