@@ -320,6 +320,7 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
 
 void *verdictThread()
 {
+    int err;
     uint32_t source_ip, dest_ip;
     // struct nfq_data *nf_address;
     struct callbackStruct *tempNode;
@@ -391,7 +392,7 @@ void *verdictThread()
                 exit(1);
             }
 
-            nfq_set_verdict(callbackStructArray[i]->queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
+            nfq_set_verdict(callbackStructArray[i]->queue, callbackStructArray[i]->packet_id, NF_ACCEPT, 0, NULL);
             array_ip_input[i] = source_ip;
         }
 
