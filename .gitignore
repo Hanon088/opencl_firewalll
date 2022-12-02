@@ -15,7 +15,6 @@ cleanup
 nfq_test
 .ocl_firewall.o.d
 user
-out.txt
 mock_ip
 ut
 simple_cl
@@ -23,3 +22,4 @@ compare
 CMakeCache.txt
 cmake_install.cmake
 CMakeFiles
+out*

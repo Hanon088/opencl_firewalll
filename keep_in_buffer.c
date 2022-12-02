@@ -21,7 +21,7 @@ Send verdict as soon as all linked list has a next node
 #include <libnetfilter_queue/libnetfilter_queue_ipv4.h>
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 
-#define ip_array_size 2
+#define ip_array_size 5
 
 long int packet_count = 0;
 
@@ -38,7 +38,127 @@ struct callbackStruct
 
 struct callbackStruct *callbackStructArray[ip_array_size];
 
-static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+static int netfilterCallback0(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+{
+    int queueNum;
+    struct callbackStruct *localBuff, *lastBuff;
+    localBuff = malloc(sizeof(struct callbackStruct));
+    lastBuff = NULL;
+
+    localBuff->queue = queue;
+    localBuff->nfad = nfad;
+    localBuff->next = NULL;
+
+    memcpy(&queueNum, (int *)data, sizeof(int));
+    printf("QUEUE NUM %d\n", queueNum);
+    if (!callbackStructArray[queueNum])
+    {
+        callbackStructArray[queueNum] = localBuff;
+    }
+    else
+    {
+        lastBuff = callbackStructArray[queueNum];
+        while (lastBuff->next)
+        {
+            lastBuff = lastBuff->next;
+        }
+        lastBuff->next = localBuff;
+    }
+
+    return 0;
+}
+
+static int netfilterCallback1(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+{
+    int queueNum;
+    struct callbackStruct *localBuff, *lastBuff;
+    localBuff = malloc(sizeof(struct callbackStruct));
+    lastBuff = NULL;
+
+    localBuff->queue = queue;
+    localBuff->nfad = nfad;
+    localBuff->next = NULL;
+
+    memcpy(&queueNum, (int *)data, sizeof(int));
+    printf("QUEUE NUM %d\n", queueNum);
+    if (!callbackStructArray[queueNum])
+    {
+        callbackStructArray[queueNum] = localBuff;
+    }
+    else
+    {
+        lastBuff = callbackStructArray[queueNum];
+        while (lastBuff->next)
+        {
+            lastBuff = lastBuff->next;
+        }
+        lastBuff->next = localBuff;
+    }
+
+    return 0;
+}
+
+static int netfilterCallback2(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+{
+    int queueNum;
+    struct callbackStruct *localBuff, *lastBuff;
+    localBuff = malloc(sizeof(struct callbackStruct));
+    lastBuff = NULL;
+
+    localBuff->queue = queue;
+    localBuff->nfad = nfad;
+    localBuff->next = NULL;
+
+    memcpy(&queueNum, (int *)data, sizeof(int));
+    printf("QUEUE NUM %d\n", queueNum);
+    if (!callbackStructArray[queueNum])
+    {
+        callbackStructArray[queueNum] = localBuff;
+    }
+    else
+    {
+        lastBuff = callbackStructArray[queueNum];
+        while (lastBuff->next)
+        {
+            lastBuff = lastBuff->next;
+        }
+        lastBuff->next = localBuff;
+    }
+
+    return 0;
+}
+
+static int netfilterCallback3(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+{
+    int queueNum;
+    struct callbackStruct *localBuff, *lastBuff;
+    localBuff = malloc(sizeof(struct callbackStruct));
+    lastBuff = NULL;
+
+    localBuff->queue = queue;
+    localBuff->nfad = nfad;
+    localBuff->next = NULL;
+
+    memcpy(&queueNum, (int *)data, sizeof(int));
+    printf("QUEUE NUM %d\n", queueNum);
+    if (!callbackStructArray[queueNum])
+    {
+        callbackStructArray[queueNum] = localBuff;
+    }
+    else
+    {
+        lastBuff = callbackStructArray[queueNum];
+        while (lastBuff->next)
+        {
+            lastBuff = lastBuff->next;
+        }
+        lastBuff->next = localBuff;
+    }
+
+    return 0;
+}
+
+static int netfilterCallback4(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
     int queueNum;
     struct callbackStruct *localBuff, *lastBuff;
@@ -96,10 +216,19 @@ void *verdictThread()
     while (1)
     {
 
-        if (!(callbackStructArray[0]->next) || !(callbackStructArray[1]->next))
+       for (int i = 0; i < ip_array_size; i++)
         {
-            continue;
+            if (!(callbackStructArray[i]))
+            {
+                goto cnt;
+            }
+
+            if (!(callbackStructArray[i]->next))
+            {
+                goto cnt;
+            }
         }
+
         for (int i = 0; i < ip_array_size; i++)
         {
             queue = callbackStructArray[i]->queue;
@@ -188,10 +317,18 @@ int main()
         fprintf(stderr, "error during nfq_bind_pf()\n");
         exit(1);
     }
+     for(int i = 0; i< ip_array_size; i++){
+        queueNum[i] = i;
+    }
     
+    queue[0] = nfq_create_queue(handler, 0, netfilterCallback0, &queueNum[0]);
+    queue[1] = nfq_create_queue(handler, 1, netfilterCallback0, &queueNum[1]);
+    queue[2] = nfq_create_queue(handler, 2, netfilterCallback0, &queueNum[2]);
+    queue[3] = nfq_create_queue(handler, 3, netfilterCallback0, &queueNum[3]);
+    queue[4] = nfq_create_queue(handler, 4, netfilterCallback0, &queueNum[4]);
     for(int i = 0; i< ip_array_size; i++){
         queueNum[i] = i;
-        queue[i] = nfq_create_queue(handler, i, netfilterCallback, &queueNum[i]);
+        //queue[i] = nfq_create_queue(handler, i, netfilterCallback, &queueNum[i]);
      if (!queue[i])
     {
         fprintf(stderr, "error during nfq_create_queue()\n");
