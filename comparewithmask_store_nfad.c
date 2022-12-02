@@ -54,9 +54,6 @@ struct callbackStruct
     struct nfq_data *nfad;
     // void *data;
     struct callbackStruct *next;
-    uint32_t source_ip;
-    uint32_t dest_ip;
-    uint32_t packet_id;
 };
 
 struct callbackStruct *callbackStructArray[ip_array_size];
@@ -77,65 +74,27 @@ const char *func_sync = "sync_rule_and_verdict";
 
 static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
-    int queueNum, rcv_len, err;
+    int queueNum, err;
     struct callbackStruct *localBuff, *lastBuff;
-    unsigned char *rawData;
-    struct pkt_buff *pkBuff;
-    struct iphdr *ip;
-    struct nfqnl_msg_packet_hdr *ph;
-    uint32_t source_ip, dest_ip;
-
     localBuff = malloc(sizeof(struct callbackStruct));
     lastBuff = NULL;
 
+    // struct nfattr *nfad_data = malloc(sizeof(struct nfattr));
+
+    // localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
     localBuff->nfad = malloc(sizeof(nfad));
+    // localBuff->nfad->data = malloc(sizeof(nfad->data));
 
     localBuff->queue = queue;
-
+    // localBuff->nfad = nfad;
+    /*memcpy(nfad_data, *(nfad->data), sizeof(struct nfattr));
+    printf("NFAD_LEN %hu NFAD_TYPE %hu\n", nfad_data->nfa_len & 0x7ff, nfad_data->nfa_type & 0x7ff);
+    localBuff->nfad->data = &nfad_data;*/
     memcpy(localBuff->nfad, nfad, sizeof(nfad));
     localBuff->next = NULL;
 
     memcpy(&queueNum, (int *)data, sizeof(int));
     printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum] + 1);
-
-    ph = nfq_get_msg_packet_hdr(nfad);
-    if (!ph)
-    {
-        return 0;
-    }
-
-    rawData = NULL;
-    // get packet data from nfad
-    rcv_len = nfq_get_payload(nfad, &rawData);
-    if (rcv_len < 0)
-    {
-        nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
-        return 0;
-    }
-
-    // allocate user space buffer???
-    pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0x1000);
-    if (!pkBuff)
-    {
-        nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
-        return 0;
-    }
-
-    ip = nfq_ip_get_hdr(pkBuff);
-    if (!ip)
-    {
-        nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
-        return 0;
-    }
-
-    /*source_ip = ntohl(ip->saddr);
-    dest_ip = ntohl(ip->daddr);*/
-
-    localBuff->source_ip = ntohl(ip->saddr);
-    localBuff->dest_ip = ntohl(ip->daddr);
-    localBuff->packet_id = ntohl(ph->packet_id);
-
-    pktb_free(pkBuff);
 
     if (!callbackStructArray[queueNum])
     {
@@ -320,7 +279,13 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
 
 void *verdictThread()
 {
+    int rcv_len, err;
+    unsigned char *rawData;
+    struct pkt_buff *pkBuff;
+    struct iphdr *ip;
+    struct nfqnl_msg_packet_hdr *ph;
     uint32_t source_ip, dest_ip;
+    struct nfq_q_handle *queue;
     // struct nfq_data *nf_address;
     struct callbackStruct *tempNode;
     uint32_t array_ip_input[ip_array_size]; // input ip array (uint32)
@@ -361,12 +326,117 @@ void *verdictThread()
 
         for (int i = 0; i < ip_array_size; i++)
         {
-            source_ip = callbackStructArray[i]->source_ip;
-            dest_ip = callbackStructArray[i]->dest_ip;
-            printf("Q: %p NFAD %p\n", callbackStructArray[i]->queue, callbackStructArray[i]->nfad);
-            printf("PACKET ID: %u\n", callbackStructArray[i]->packet_id);
-            printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
+            struct nfq_data *nf_address = NULL;
+            queue = callbackStructArray[i]->queue;
+            nf_address = callbackStructArray[i]->nfad;
 
+            printf("VERDICT THREAD - QUEUE NUM %d PACKET NUM %d\n", i, packetNumInQ[i]);
+
+            while (!nf_address)
+            {
+            get_next_in_q:;
+                nf_address = NULL;
+
+                err = pthread_mutex_lock(&mtx[i]);
+                if (err != 0)
+                {
+                    fprintf(stderr, "pthread_mutex_lock fails\n");
+                    exit(1);
+                }
+                if (!callbackStructArray[i])
+                {
+                    err = pthread_mutex_unlock(&mtx[i]);
+                    if (err != 0)
+                    {
+                        fprintf(stderr, "pthread_mutex_unlock fails\n");
+                        exit(1);
+                    }
+                    goto get_next_in_q;
+                }
+                if (callbackStructArray[i]->next)
+                {
+                    tempNode = NULL;
+                    /*tempNode = callbackStructArray[i]->next;
+                    free(callbackStructArray[i]);
+                    callbackStructArray[i] = tempNode;
+                    packetNumInQ[i]--;*/
+
+                    tempNode = callbackStructArray[i];
+                    callbackStructArray[i] = callbackStructArray[i]->next;
+                    tempNode->queue = NULL;
+                    // tempNode->nfad = NULL;
+                    free(tempNode->nfad);
+                    free(tempNode);
+                    packetNumInQ[i]--;
+                }
+                err = pthread_mutex_unlock(&mtx[i]);
+                if (err != 0)
+                {
+                    fprintf(stderr, "pthread_mutex_unlock fails\n");
+                    exit(1);
+                }
+
+                printf("VERDICT THREAD - QUEUE NUM %d PACKET NUM %d\n", i, packetNumInQ[i]);
+
+                queue = callbackStructArray[i]->queue;
+                nf_address = callbackStructArray[i]->nfad;
+            }
+
+            printf("OUT OF NFAD LOOP, Q: %p NFAD IN LOOP: %p NFAD IN BUFF: %p\n", queue, nf_address, callbackStructArray[i]->nfad);
+
+            // printf("NFAD_LEN %hu NFAD_TYPE %hu\n", (**(nf_address->data)).nfa_len & 0x7ff, (**(nf_address->data)).nfa_type & 0x7ff);
+            ph = nfq_get_msg_packet_hdr(nf_address);
+            if (!ph)
+            {
+                printf("ph fails, GOING BACK IN LOOP\n");
+                goto get_next_in_q;
+                /*fprintf(stderr, "Can't get packet header\n");
+                exit(1);*/
+            }
+
+            printf("PACKET ID: %u\n", ntohl(ph->packet_id));
+
+            rawData = NULL;
+            rcv_len = nfq_get_payload(nf_address, &rawData);
+            if (rcv_len < 0)
+            {
+                printf("get payload fails, GOING BACK IN LOOP\n");
+                nfq_set_verdict(queue, ntohl(ph->packet_id), NF_DROP, 0, NULL);
+                goto get_next_in_q;
+                /*fprintf(stderr, "Can't get raw data\n");
+                exit(1);*/
+            }
+            printf("RCV LEN %d\n", rcv_len);
+
+            // does pkBuff needs to be set to NULL first?
+            pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0xfff);
+            if (!pkBuff)
+            {
+                printf("pktBuff fails, GOING BACK IN LOOP\n");
+                nfq_set_verdict(queue, ntohl(ph->packet_id), NF_DROP, 0, NULL);
+                goto get_next_in_q;
+                /*fprintf(stderr, "Issue while pktb allocate\n");
+                exit(1);*/
+            }
+
+            ip = nfq_ip_get_hdr(pkBuff);
+            if (!ip)
+            {
+                printf("ip fails, GOING BACK IN LOOP\n");
+                nfq_set_verdict(queue, ntohl(ph->packet_id), NF_DROP, 0, NULL);
+                goto get_next_in_q;
+                /*
+                fprintf(stderr, "Issue while ipv4 header parse\n");
+                exit(1);
+                */
+            }
+
+            source_ip = ntohl(ip->saddr);
+            dest_ip = ntohl(ip->daddr);
+            printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
+            pktb_free(pkBuff);
+
+            // does this help?
             err = pthread_mutex_lock(&mtx[i]);
             if (err != 0)
             {
@@ -376,10 +446,16 @@ void *verdictThread()
             if (callbackStructArray[i]->next)
             {
                 tempNode = NULL;
+                /*tempNode = callbackStructArray[i]->next;
+                free(callbackStructArray[i]->queue);
+                free(callbackStructArray[i]->nfad);
+                free(callbackStructArray[i]);
+                callbackStructArray[i] = tempNode;*/
 
                 tempNode = callbackStructArray[i];
                 callbackStructArray[i] = callbackStructArray[i]->next;
                 tempNode->queue = NULL;
+                // tempNode->nfad = NULL;
                 free(tempNode->nfad);
                 free(tempNode);
                 packetNumInQ[i]--;
@@ -391,8 +467,9 @@ void *verdictThread()
                 exit(1);
             }
 
-            nfq_set_verdict(callbackStructArray[i]->queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
+            nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
             array_ip_input[i] = source_ip;
+            // memcpy(array_ip_input[i], &source_ip, 4);
         }
 
         // check rule_ip ip on cpu
