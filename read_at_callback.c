@@ -40,10 +40,8 @@ static pthread_mutex_t mtx[ip_array_size];
 
 static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
-    int queueNum;
+    int queueNum, rcv_len, err;
     struct callbackStruct *localBuff, *lastBuff;
-
-    int rcv_len;
     unsigned char *rawData;
     struct pkt_buff *pkBuff;
     struct iphdr *ip;
@@ -166,6 +164,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
 
 void *verdictThread()
 {
+    int err;
     uint32_t source_ip, dest_ip;
     struct nfq_q_handle *queue;
     struct nfq_data *nfad;
@@ -303,7 +302,7 @@ int main()
         }
     }
 
-    fd = nfq_fd(handler);
+    netf_fd = nfq_fd(handler);
     pthread_create(&rt, NULL, recvThread, NULL);
     pthread_create(&vt, NULL, verdictThread, NULL);
 
