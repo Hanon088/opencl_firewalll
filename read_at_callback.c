@@ -56,6 +56,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     localBuff->next = NULL;
 
     memcpy(&queueNum, (int *)data, sizeof(int));
+    printf("QUEUE NUM %d\n", queueNum);
 
     ph = nfq_get_msg_packet_hdr(nfad);
     if (!ph)
@@ -106,7 +107,6 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         }
         callbackStructArray[queueNum] = localBuff;
         tailArray[queueNum] = localBuff;
-        packetNumInQ[queueNum]++;
         err = pthread_mutex_unlock(&mtx[queueNum]);
         if (err != 0)
         {
@@ -124,7 +124,6 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         }
         tailArray[queueNum]->next = localBuff;
         tailArray[queueNum] = tailArray[queueNum]->next;
-        packetNumInQ[queueNum]++;
         err = pthread_mutex_unlock(&mtx[queueNum]);
         if (err != 0)
         {
@@ -150,7 +149,6 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         }
         lastBuff->next = localBuff;
         tailArray[queueNum] = localBuff;
-        packetNumInQ[queueNum]++;
         err = pthread_mutex_unlock(&mtx[queueNum]);
         if (err != 0)
         {
@@ -209,7 +207,7 @@ void *verdictThread()
             printf("Q: %p NFAD %p\n", callbackStructArray[i]->queue, callbackStructArray[i]->nfad);
             printf("PACKET ID: %u\n", callbackStructArray[i]->packet_id);
             printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
-            nfq_set_verdict(queue, callbackStructArray[i]->packet_id, NF_ACCEPT, 0, NULL);
+            nfq_set_verdict(callbackStructArray[i]->queue, callbackStructArray[i]->packet_id, NF_ACCEPT, 0, NULL);
 
             err = pthread_mutex_lock(&mtx[i]);
             if (err != 0)
