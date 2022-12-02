@@ -40,9 +40,11 @@ int rule_array_size = 4;*/
 
 unsigned char string_ip[4];
 // uint32_t array_ip_input[ip_array_size];       // input ip array (uint32)
-uint32_t rule_ip[rule_array_size];            // input rule_ip (ip uint32)
-uint32_t mask[rule_array_size];               // input mask (mask uint32)
-bool result[ip_array_size * rule_array_size]; // output array order
+uint32_t rule_ip[rule_array_size]; // input rule_ip (ip uint32)
+uint32_t mask[rule_array_size];    // input mask (mask uint32)
+int rule_verdict[rule_array_size];
+// bool result[ip_array_size * rule_array_size]; // output array order
+int result[ip_array_size]; // output array order
 
 // what if we can use pkt_buff instead
 struct callbackStruct
@@ -61,6 +63,7 @@ static int packetNumInQ[ip_array_size];
 
 const char *source = "/home/tanate/github/opencl_firewalll/compare.cl";
 const char *func = "compare";
+const char *func_sync = "sync_rule_and_verdict";
 
 // example value
 #define printable_ip(addr)           \
@@ -76,12 +79,11 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     localBuff = malloc(sizeof(struct callbackStruct));
     lastBuff = NULL;
 
-
-    //struct nfattr *nfad_data = malloc(sizeof(struct nfattr));
+    // struct nfattr *nfad_data = malloc(sizeof(struct nfattr));
 
     // localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
     localBuff->nfad = malloc(sizeof(nfad));
-    //localBuff->nfad->data = malloc(sizeof(nfad->data));
+    // localBuff->nfad->data = malloc(sizeof(nfad->data));
 
     localBuff->queue = queue;
     // localBuff->nfad = nfad;
@@ -160,21 +162,27 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     return 0;
 }
 
-int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t mask[], bool result[], int ip_arr_size, int rule_arr_size)
+int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t mask[], int verdict[], int result[], int ip_arr_size, int rule_arr_size)
 {
     // opencl structures
     cl_device_id deviceId;
     cl_context context;
     cl_program program;
-    cl_kernel kernel;
+    cl_kernel kernel_compare, kernel_sync;
     cl_command_queue queue;
     cl_int err;
-
+    bool first_result[ip_arr_size * rule_arr_size];
+    int rule_size[] = {rule_arr_size};
     // Data and Buffer
-    cl_mem packet_buffer, rule_buffer, mask_buffer, output_buffer;
+    cl_mem packet_buffer, rule_buffer, mask_buffer, verdict_buffer, output_buffer, result_buffer, rule_size_buffer;
 
     // create cl_device
     deviceId = create_device_cl();
+
+    long mem_size;
+    err = clGetDeviceInfo(deviceId, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(long), &mem_size, NULL);
+    printf("GLOBAL_MEM_SIZE : %ld MB \n", mem_size / 1000000);
+
     // crate context
     context = clCreateContext(NULL, 1, &deviceId, NULL, NULL, &err);
     print_err(err);
@@ -188,7 +196,6 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
     size_t global_offset[] = {0, 0};
 
     // create data_buffer for read and write
-    // maybe move buffer and queue creation to another function? to optimise data flow
     packet_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ip_arr_size * sizeof(uint32_t), array_ip_input, &err);
     print_err(err);
 
@@ -198,41 +205,75 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
     mask_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_arr_size * sizeof(uint32_t), mask, &err);
     print_err(err);
 
-    output_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, rule_arr_size * ip_arr_size * sizeof(bool), result, &err);
+    verdict_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_arr_size * sizeof(int), verdict, &err);
+    print_err(err);
+
+    rule_size_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int), rule_size, &err);
+    print_err(err);
+
+    output_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, rule_arr_size * ip_arr_size * sizeof(bool), first_result, &err);
+    print_err(err);
+
+    result_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, ip_arr_size * sizeof(int), result, &err);
     print_err(err);
 
     queue = clCreateCommandQueueWithProperties(context, deviceId, 0, &err);
     print_err(err);
 
-    // crate kernel from source and func
-    kernel = clCreateKernel(program, func, &err);
+    // crate kernel_compare from source and func_compare
+    kernel_compare = clCreateKernel(program, func_compare, &err);
     print_err(err);
 
-    // set kernel function arguments
-    err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &packet_buffer);
+    // set kernel_compare function arguments
+    err = clSetKernelArg(kernel_compare, 0, sizeof(cl_mem), &packet_buffer);
     print_err(err);
-    err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &rule_buffer);
+    err |= clSetKernelArg(kernel_compare, 1, sizeof(cl_mem), &rule_buffer);
     print_err(err);
-    err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &mask_buffer);
+    err |= clSetKernelArg(kernel_compare, 2, sizeof(cl_mem), &mask_buffer);
     print_err(err);
-    err |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &output_buffer);
-    print_err(err);
-
-    // Enqueue kernel to device
-    err = clEnqueueNDRangeKernel(queue, kernel, 2, global_offset, global_size, local_size, 0, NULL, NULL);
+    err |= clSetKernelArg(kernel_compare, 3, sizeof(cl_mem), &output_buffer);
     print_err(err);
 
-    // read result buffer in kernel
-    err = clEnqueueReadBuffer(queue, output_buffer, CL_TRUE, 0, ip_arr_size * rule_arr_size * sizeof(bool), result, 0, NULL, NULL);
+    // Enqueue kernel_compare to device
+    err = clEnqueueNDRangeKernel(queue, kernel_compare, 2, global_offset, global_size, local_size, 0, NULL, NULL);
     print_err(err);
+
+    // read result buffer in kernel_compare
+    err = clEnqueueReadBuffer(queue, output_buffer, CL_TRUE, 0, ip_arr_size * rule_arr_size * sizeof(bool), first_result, 0, NULL, NULL);
+    print_err(err);
+
+    kernel_sync = clCreateKernel(program, func_sync, &err);
+    print_err(err);
+
+    err = clSetKernelArg(kernel_sync, 0, sizeof(cl_mem), &output_buffer);
+    print_err(err);
+    err |= clSetKernelArg(kernel_sync, 1, sizeof(cl_mem), &verdict_buffer);
+    print_err(err);
+    err |= clSetKernelArg(kernel_sync, 2, sizeof(cl_mem), &result_buffer);
+    print_err(err);
+    err |= clSetKernelArg(kernel_sync, 3, sizeof(cl_mem), &rule_size_buffer);
+    print_err(err);
+
+    size_t sync_work_group[] = {ip_arr_size};
+    size_t sync_local[] = {1};
+
+    err = clEnqueueNDRangeKernel(queue, kernel_sync, 1, 0, sync_work_group, sync_local, 0, NULL, NULL);
+    print_err(err);
+
+    err = clEnqueueReadBuffer(queue, result_buffer, CL_TRUE, 0, ip_arr_size * sizeof(int), result, 0, NULL, NULL);
+    print_err(err);
+
     // release resources
-    clReleaseKernel(kernel);
+    clReleaseKernel(kernel_compare);
+    clReleaseKernel(kernel_sync);
     clReleaseMemObject(packet_buffer);
     clReleaseMemObject(rule_buffer);
+    clReleaseMemObject(verdict_buffer);
     clReleaseMemObject(output_buffer);
+    clReleaseMemObject(result_buffer);
     clReleaseCommandQueue(queue);
     clReleaseProgram(program);
-    clRetainContext(context);
+    clReleaseContext(context);
     return 0;
 }
 
@@ -343,7 +384,7 @@ void *verdictThread()
 
             printf("OUT OF NFAD LOOP, Q: %p NFAD IN LOOP: %p NFAD IN BUFF: %p\n", queue, nf_address, callbackStructArray[i]->nfad);
 
-            //printf("NFAD_LEN %hu NFAD_TYPE %hu\n", (**(nf_address->data)).nfa_len & 0x7ff, (**(nf_address->data)).nfa_type & 0x7ff);
+            // printf("NFAD_LEN %hu NFAD_TYPE %hu\n", (**(nf_address->data)).nfa_len & 0x7ff, (**(nf_address->data)).nfa_type & 0x7ff);
             ph = nfq_get_msg_packet_hdr(nf_address);
             if (!ph)
             {
@@ -448,14 +489,19 @@ void *verdictThread()
             printf("\n");
         }
 
-        compare_with_mask(array_ip_input, rule_ip, mask, result, ip_array_size, rule_array_size);
-        for (int i = 0; i < sizeof(result) / sizeof(bool); i++)
+        // compare_with_mask(array_ip_input, rule_ip, mask, result, ip_array_size, rule_array_size);
+        compare_with_mask(array_ip_input, rule_ip, mask, rule_verdict, result, ip_array_size, rule_array_size);
+        /*for (int i = 0; i < sizeof(result) / sizeof(bool); i++)
         {
             printf("%d", result[i]);
             if (i % rule_array_size == rule_array_size - 1)
             {
                 printf("\n");
             }
+        }*/
+        for (int i = 0; i < sizeof(result) / sizeof(int); i++)
+        {
+            printf("%d", result[i]);
         }
 
         // packet_count %= ip_array_size;
@@ -506,6 +552,7 @@ int main()
         string_ip[1] = (unsigned int)0;
         string_ip[0] = (unsigned int)0;
         memcpy(&mask[i], string_ip, 4);
+        rule_verdict[i] = (i % 2 == 0);
     }
 
     for (int i = 0; i < ip_array_size; i++)
