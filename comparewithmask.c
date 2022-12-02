@@ -25,9 +25,9 @@
 #define ip_array_size 5
 #define rule_array_size 4
 
-struct nfq_data{
+/*struct nfq_data{
     struct nfattr **data;
-};
+};*/
 
 long int packet_count = 0;
 long int batch_num = 0;
@@ -80,7 +80,8 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     //struct nfattr *nfad_data = malloc(sizeof(struct nfattr));
 
     // localBuff->queue = malloc(sizeof(struct nfq_q_handle *));
-    localBuff->nfad = malloc(sizeof(struct nfq_data));
+    localBuff->nfad = malloc(sizeof(nfad));
+    //localBuff->nfad->data = malloc(sizeof(nfad->data));
 
     localBuff->queue = queue;
     // localBuff->nfad = nfad;
@@ -342,7 +343,7 @@ void *verdictThread()
 
             printf("OUT OF NFAD LOOP, Q: %p NFAD IN LOOP: %p NFAD IN BUFF: %p\n", queue, nf_address, callbackStructArray[i]->nfad);
 
-            printf("NFAD_LEN %hu NFAD_TYPE %hu\n", (**(nf_address->data)).nfa_len & 0x7ff, (**(nf_address->data)).nfa_type & 0x7ff);
+            //printf("NFAD_LEN %hu NFAD_TYPE %hu\n", (**(nf_address->data)).nfa_len & 0x7ff, (**(nf_address->data)).nfa_type & 0x7ff);
             ph = nfq_get_msg_packet_hdr(nf_address);
             if (!ph)
             {
