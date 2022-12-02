@@ -270,6 +270,8 @@ void *verdictThread()
 
             source_ip = ntohl(ip->saddr);
             dest_ip = ntohl(ip->daddr);
+            printf("Q: %p NFAD IN LOOP: %p NFAD IN BUFF: %p\n", queue, nfad, callbackStructArray[i]->nfad);
+            printf("PACKET ID: %u\n", ntohl(ph->packet_id));
             printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
             pktb_free(pkBuff);
             nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
