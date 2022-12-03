@@ -364,7 +364,7 @@ void *verdictThread()
         {
             source_ip = callbackStructArray[i]->source_ip;
             dest_ip = callbackStructArray[i]->dest_ip;
-            printf("Q: %p NFAD %p\n", callbackStructArray[i]->queue, callbackStructArray[i]->nfad);
+            // printf("Q: %p NFAD %p\n", callbackStructArray[i]->queue, callbackStructArray[i]->nfad);
             printf("PACKET ID: %u\n", callbackStructArray[i]->packet_id);
             printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", printable_ip(source_ip), printable_ip(dest_ip));
 
@@ -463,7 +463,7 @@ void *recvThread()
         rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
         if (rcv_len < 0)
             continue;
-        printf("pkt received %ld\n", ++packet_count);
+        // printf("pkt received %ld\n", ++packet_count);
         nfq_handle_packet(handler, buf, rcv_len);
     }
     return 0;
