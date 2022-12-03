@@ -96,7 +96,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
     localBuff->next = NULL;
 
     memcpy(&queueNum, (int *)data, sizeof(int));
-    printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum] + 1);
+    // printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum] + 1);
 
     ph = nfq_get_msg_packet_hdr(nfad);
     if (!ph)
@@ -365,7 +365,7 @@ void *verdictThread()
             source_ip = callbackStructArray[i]->source_ip;
             dest_ip = callbackStructArray[i]->dest_ip;
             // printf("Q: %p NFAD %p\n", callbackStructArray[i]->queue, callbackStructArray[i]->nfad);
-            printf("PACKET ID: %u\n", callbackStructArray[i]->packet_id);
+            printf("QUEUE %d PACKET ID: %u\n", i, callbackStructArray[i]->packet_id);
             printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", printable_ip(source_ip), printable_ip(dest_ip));
 
             /*err = pthread_mutex_lock(&mtx[i]);
