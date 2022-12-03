@@ -366,7 +366,7 @@ void *verdictThread()
             dest_ip = callbackStructArray[i]->dest_ip;
             printf("Q: %p NFAD %p\n", callbackStructArray[i]->queue, callbackStructArray[i]->nfad);
             printf("PACKET ID: %u\n", callbackStructArray[i]->packet_id);
-            printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
+            printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", printable_ip(source_ip), printable_ip(dest_ip));
 
             err = pthread_mutex_lock(&mtx[i]);
             if (err != 0)
@@ -400,17 +400,17 @@ void *verdictThread()
         bool test;
         for (int i = 0; i < rule_array_size; i++)
         {
-            printf("%s %d: %u.%u.%u.%u mask : %u.%u.%u.%u\n", "rule_ip", i, printable_ip(rule_ip[i]), printable_ip(mask[i]));
+            printf("%s %d: %u.%u.%u.%u mask : %u.%u.%u.%u : verdict : %d\n", "rule_ip", i, printable_ip(rule_ip[i]), printable_ip(mask[i]), verdict[i]);
         }
-        for (int i = 0; i < ip_array_size; i++)
+        for (int i = 0; i < ip_array_size * rule_array_size; i++)
         {
-            for (int j = 0; j < rule_array_size; j++)
+            test = rule_ip[i % rule_array_size] == (array_ip_input[i / rule_array_size] & mask[i % rule_array_size]);
+            printf("%d", test);
+            //        printf(" | %u.%u.%u.%u ", printable_ip(array_ip_input[i/rule_array_size]));
+            if (i % rule_array_size == rule_array_size - 1)
             {
-                test = rule_ip[j] == (array_ip_input[i] & mask[j]);
-                printf("%d", test);
-                printf(" | %u.%u.%u.%u ", printable_ip(array_ip_input[i]));
+                printf("\n");
             }
-            printf("\n");
         }
 
         // compare_with_mask(array_ip_input, rule_ip, mask, result, ip_array_size, rule_array_size);
@@ -427,8 +427,6 @@ void *verdictThread()
         {
             printf("%d", result[i]);
         }
-
-        // packet_count %= ip_array_size;
     }
 }
 
@@ -439,18 +437,9 @@ void *recvThread()
     while (1)
     {
         rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
-        // rcv_len = recv(netf_fd, argsrt1.buf, sizeof(argsrt1.buf), MSG_DONTWAIT);
-        /* Would multiple buffer do anything?
-           Since recv would be using the same netf_fd
-        */
-
-        // discarding everything that is smaller than minimum ip packet size
-        if (rcv_len < 21)
+        if (rcv_len < 0)
             continue;
         printf("pkt received %ld\n", ++packet_count);
-        /* Is this asynchronous for each queue?
-           Does the loop wait for packet handling to be done?
-         */
         nfq_handle_packet(handler, buf, rcv_len);
     }
     return 0;
