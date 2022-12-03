@@ -400,7 +400,7 @@ void *verdictThread()
         bool test;
         for (int i = 0; i < rule_array_size; i++)
         {
-            printf("%s %d: %u.%u.%u.%u mask : %u.%u.%u.%u : verdict : %d\n", "rule_ip", i, printable_ip(rule_ip[i]), printable_ip(mask[i]), verdict[i]);
+            printf("%s %d: %u.%u.%u.%u mask : %u.%u.%u.%u : verdict : %d\n", "rule_ip", i, printable_ip(rule_ip[i]), printable_ip(mask[i]), rule_verdict[i]);
         }
         for (int i = 0; i < ip_array_size * rule_array_size; i++)
         {
