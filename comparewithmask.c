@@ -6,6 +6,7 @@
 #include <string.h>
 #include <CL/cl.h>
 #include <stdbool.h>
+#include <time.h>
 #include "src/src.h"
 
 const char *source = "C:\\Users\\User\\opencl_firewalll\\compare.cl";
@@ -131,6 +132,8 @@ int compare_with_mask(uint32_t array_ip_input[] , uint32_t rule_ip[], uint32_t m
     clReleaseMemObject(verdict_buffer);
     clReleaseMemObject(output_buffer);
     clReleaseMemObject(result_buffer);
+    clReleaseMemObject(rule_size_buffer);
+    clReleaseMemObject(mask_buffer);
     clReleaseCommandQueue(queue);
     clReleaseProgram(program);
     clReleaseContext(context);
@@ -162,9 +165,10 @@ int main()
     verdict[1] = 0;
     verdict[2] = 4;
     verdict[3] = 5;
+    srand(time(0));
     for (int i=0; i<rule_array_size ; i++){
         string_ip[3] = (unsigned int) 192;
-        string_ip[2] = (unsigned int) 168+i;
+        string_ip[2] = (unsigned int) 168+(rand()%10+1);
         string_ip[1] = (unsigned int) 0;
         string_ip[0] = (unsigned int) 0;
         memcpy(&rule_ip[i], string_ip, 4);
@@ -202,17 +206,27 @@ int main()
     for(int i = 0 ; i < rule_array_size ; i ++){
         printf("%s %d: %u.%u.%u.%u mask : %u.%u.%u.%u : verdict : %d\n", "rule_ip", i , printable_ip(rule_ip[i]), printable_ip(mask[i]), verdict[i]);
     }
+    int verdict_buffer = 0;
     for(int i = 0 ; i < ip_array_size*rule_array_size ; i ++){
         test = rule_ip[i%rule_array_size] == (array_ip_input[i/rule_array_size] & mask[i%rule_array_size]);
-        printf("%d",test);
-//        printf(" | %u.%u.%u.%u ", printable_ip(array_ip_input[i/rule_array_size]));
-        if(i%rule_array_size == rule_array_size-1) {
-            printf("\n");
+     if(test){
+            verdict_buffer = verdict[i%rule_array_size];
+            i += rule_array_size - i%rule_array_size;
+            printf("%d", verdict_buffer);
+            verdict_buffer = 0;
+        }
+        if(i%rule_array_size == rule_array_size-1){
+            printf("%d", verdict_buffer);
+            verdict_buffer = 0;
         }
     }
-    compare_with_mask(array_ip_input, rule_ip, mask, verdict, result, ip_array_size, rule_array_size);
-    for(int i = 0; i< sizeof(result) / sizeof(int) ; i++){
-        printf("%d" ,result[i]);
+    printf("\n");
+    for(int j = 0 ; j<1000 ; j ++) {
+        compare_with_mask(array_ip_input, rule_ip, mask, verdict, result, ip_array_size, rule_array_size);
+        for (int i = 0; i < sizeof(result) / sizeof(int); i++) {
+            printf("%d", result[i]);
+        }
+        printf("\n");
     }
 
 
