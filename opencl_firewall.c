@@ -308,6 +308,8 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
     clReleaseMemObject(verdict_buffer);
     clReleaseMemObject(output_buffer);
     clReleaseMemObject(result_buffer);
+    clReleaseMemObject(rule_size_buffer);
+    clReleaseMemObject(mask_buffer);
     clReleaseCommandQueue(queue);
     clReleaseProgram(program);
     clReleaseContext(context);
@@ -366,6 +368,7 @@ void *verdictThread()
         }
 
         // check rule_ip ip on cpu
+        printf("MATCH ON CPU\n");
         bool test;
         for (int i = 0; i < rule_array_size; i++)
         {
@@ -382,16 +385,8 @@ void *verdictThread()
             }
         }
 
-        // compare_with_mask(array_ip_input, rule_ip, mask, result, ip_array_size, rule_array_size);
+        printf("MATCH ON DEVICE\n");
         compare_with_mask(array_ip_input, rule_ip, mask, rule_verdict, result, ip_array_size, rule_array_size);
-        /*for (int i = 0; i < sizeof(result) / sizeof(bool); i++)
-        {
-            printf("%d", result[i]);
-            if (i % rule_array_size == rule_array_size - 1)
-            {
-                printf("\n");
-            }
-        }*/
         for (int i = 0; i < sizeof(result) / sizeof(int); i++)
         {
             printf("%d", result[i]);
