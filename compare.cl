@@ -1,9 +1,9 @@
-__kernel void compare(__global uint *packet, __global uint *rule, __global uint *mask, __global bool *result){
+__kernel void compare(__global ulong *packet, __global ulong *rule, __global ulong *mask, __global bool *result){
        /* n rule n packet */
 
-       __local uint local_input1;
-       __local uint local_rule;
-       __local uint local_mask;
+       __local ulong local_input1;
+       __local ulong local_rule;
+       __local ulong local_mask;
        __local bool local_output;
 
        int packet_global_id_0 = get_global_id(0);
@@ -19,7 +19,8 @@ __kernel void compare(__global uint *packet, __global uint *rule, __global uint 
        result[packet_index] = local_output;
 }
 
-__kernel void sync_rule_and_verdict(__global bool *set_already_compare, __global int *verdict, __global int *result ,__global int *rule_size){
+__kernel void sync_rule_and_verdict(__global bool *set_already_compare, __global int *verdict,
+    __global int *result ,__global int *rule_size){
 
     __local int local_result;
     __local bool input1, input2, input3, input4;
@@ -34,4 +35,3 @@ __kernel void sync_rule_and_verdict(__global bool *set_already_compare, __global
     }
     result[get_global_id(0)] = local_result;
 }
-    /*result[0] = packet[0] == (rule[0]&&mask);*/

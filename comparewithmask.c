@@ -22,7 +22,7 @@ const char *func_sync = "sync_rule_and_verdict";
 
 // main_program
 
-int compare_with_mask(uint32_t array_ip_input[] , uint32_t rule_ip[], uint32_t mask[], int verdict[], int result[], int ip_array_size, int rule_array_size){
+int compare_with_mask(uint64_t array_ip_input[] , uint64_t rule_ip[], uint64_t mask[], int verdict[], int result[], int ip_array_size, int rule_array_size){
     // opencl structures
     cl_device_id deviceId;
     cl_context  context;
@@ -55,13 +55,13 @@ int compare_with_mask(uint32_t array_ip_input[] , uint32_t rule_ip[], uint32_t m
     size_t global_offset[] = {0,0};
 
     //create data_buffer for read and write
-    packet_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ip_array_size* sizeof(uint32_t), array_ip_input, &err);
+    packet_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ip_array_size* sizeof(uint64_t), array_ip_input, &err);
     print_err(err);
 
-    rule_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_array_size* sizeof(uint32_t), rule_ip, &err);
+    rule_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_array_size* sizeof(uint64_t), rule_ip, &err);
     print_err(err);
 
-    mask_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_array_size* sizeof(uint32_t), mask, &err);
+    mask_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_array_size* sizeof(uint64_t), mask, &err);
     print_err(err);
 
     verdict_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_array_size* sizeof(int), verdict, &err);
@@ -97,10 +97,6 @@ int compare_with_mask(uint32_t array_ip_input[] , uint32_t rule_ip[], uint32_t m
 
     //Enqueue kernel_compare to device
     err = clEnqueueNDRangeKernel(queue, kernel_compare, 2, global_offset, global_size, local_size, 0, NULL, NULL);
-    print_err(err);
-
-    //read result buffer in kernel_compare
-    err = clEnqueueReadBuffer(queue, output_buffer, CL_TRUE, 0, ip_array_size * rule_array_size * sizeof(bool), first_result, 0, NULL, NULL);
     print_err(err);
 
     kernel_sync = clCreateKernel(program, func_sync, &err);
@@ -154,13 +150,13 @@ int main()
     string_ip[0] = (unsigned int) 100;
     memcpy(&binary_ip, string_ip, 4);
 
-    uint32_t array_ip_input[ip_array_size];// input ip array (uint32)
-    uint32_t rule_ip[rule_array_size];// input rule_ip (ip uint32)
-    uint32_t mask[rule_array_size];// input mask (mask uint32)
+    uint64_t array_ip_input[ip_array_size];// input ip array (uint64)
+    uint64_t rule_ip[rule_array_size];// input rule_ip (ip uint64)
+    uint64_t mask[rule_array_size];// input mask (mask uint64)
     int verdict[rule_array_size];
     int result[ip_array_size];// output array order
 
-    //initialize data copy ip and set rule_ip(uint32_t array)
+    //initialize data copy ip and set rule_ip(uint64_t array)
     verdict[0] = 1;
     verdict[1] = 0;
     verdict[2] = 4;
@@ -221,7 +217,7 @@ int main()
         }
     }
     printf("\n");
-    for(int j = 0 ; j<1000 ; j ++) {
+    for(int j = 0 ; j<1 ; j ++) {
         compare_with_mask(array_ip_input, rule_ip, mask, verdict, result, ip_array_size, rule_array_size);
         for (int i = 0; i < sizeof(result) / sizeof(int); i++) {
             printf("%d", result[i]);
