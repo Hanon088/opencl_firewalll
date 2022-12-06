@@ -17,3 +17,12 @@ nfq_test
 user
 out.txt
 mock_ip
+Makefile
+CMakeCache.txt
+cmake_install.cmake
+CMakeFiles
+simple_cl
+out*
+ut
+compare
+opencl_firewall

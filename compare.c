@@ -9,6 +9,11 @@
 #include "variables.h"
 #include "compare.h"
 
+uint32_t rule_ip[rule_array_size];
+uint32_t mask[rule_array_size];
+int rule_verdict[rule_array_size];
+int result[ip_array_size];
+
 int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t mask[], int verdict[], int result[], int ip_arr_size, int rule_arr_size)
 {
     // opencl structures
