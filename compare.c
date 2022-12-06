@@ -9,12 +9,12 @@
 #include "variables.h"
 #include "compare.h"
 
-uint32_t rule_ip[rule_array_size];
-uint32_t mask[rule_array_size];
+uint64_t rule_ip[rule_array_size];
+uint64_t mask[rule_array_size];
 int rule_verdict[rule_array_size];
 int result[ip_array_size];
 
-int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t mask[], int verdict[], int result[], int ip_arr_size, int rule_arr_size)
+int compare_with_mask(uint64_t array_ip_input[], uint64_t rule_ip[], uint64_t mask[], int verdict[], int result[], int ip_arr_size, int rule_arr_size)
 {
     // opencl structures
     cl_device_id deviceId;
@@ -48,13 +48,13 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
     size_t global_offset[] = {0, 0};
 
     // create data_buffer for read and write
-    packet_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ip_arr_size * sizeof(uint32_t), array_ip_input, &err);
+    packet_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ip_arr_size * sizeof(uint64_t), array_ip_input, &err);
     print_err(err);
 
-    rule_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_arr_size * sizeof(uint32_t), rule_ip, &err);
+    rule_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_arr_size * sizeof(uint64_t), rule_ip, &err);
     print_err(err);
 
-    mask_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_arr_size * sizeof(uint32_t), mask, &err);
+    mask_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_arr_size * sizeof(uint64_t), mask, &err);
     print_err(err);
 
     verdict_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, rule_arr_size * sizeof(int), verdict, &err);
@@ -88,10 +88,6 @@ int compare_with_mask(uint32_t array_ip_input[], uint32_t rule_ip[], uint32_t ma
 
     // Enqueue kernel_compare to device
     err = clEnqueueNDRangeKernel(queue, kernel_compare, 2, global_offset, global_size, local_size, 0, NULL, NULL);
-    print_err(err);
-
-    // read result buffer in kernel_compare
-    err = clEnqueueReadBuffer(queue, output_buffer, CL_TRUE, 0, ip_arr_size * rule_arr_size * sizeof(bool), first_result, 0, NULL, NULL);
     print_err(err);
 
     kernel_sync = clCreateKernel(program, func_sync, &err);

@@ -171,9 +171,10 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
 void *verdictThread()
 {
     int err;
-    uint32_t source_ip, dest_ip;
+    // uint32_t source_ip, dest_ip;
+    uint32_t ip_addr[2] __attribute__((aligned));
     struct callbackStruct *tempNode;
-    uint32_t array_ip_input[ip_array_size];
+    uint64_t array_ip_input[ip_array_size];
 
     while (1)
     {
@@ -210,13 +211,14 @@ void *verdictThread()
 
         for (int i = 0; i < ip_array_size; i++)
         {
-            source_ip = callbackStructArray[i]->source_ip;
-            dest_ip = callbackStructArray[i]->dest_ip;
+            ip_addr[0] = callbackStructArray[i]->source_ip;
+            ip_addr[1] = callbackStructArray[i]->dest_ip;
             // printf("Q: %p NFAD %p\n", callbackStructArray[i]->queue, callbackStructArray[i]->nfad);
             printf("QUEUE %d PACKET ID: %u\n", i, callbackStructArray[i]->packet_id);
-            printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", printable_ip(source_ip), printable_ip(dest_ip));
+            printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]));
 
-            array_ip_input[i] = source_ip;
+            // array_ip_input[i] = source_ip;
+            memcpy(&array_ip_input[i], ip_addr, 8);
         }
 
         // check rule_ip ip on cpu
