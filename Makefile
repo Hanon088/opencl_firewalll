@@ -1,4 +1,4 @@
-obj-m := ocl_firewall.o
+obj-m := ipc_test.o
 
 CXXFLAGS= -std=gnu11
 
