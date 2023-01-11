@@ -5,9 +5,13 @@
 #include <linux/netfilter_ipv4.h>
 #include <linux/ip.h>
 
-static struct nf_hook_ops *check_rules_ops = NULL;
+#include <linux/skbuff.h>
 
-static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
+static struct nf_hook_ops *check_rules_ops = NULL;
+struct sk_buff_head *custom_head;
+
+static unsigned int
+check_rules(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 {
     if (!skb)
         return NF_ACCEPT;
@@ -18,8 +22,9 @@ static unsigned int check_rules(void *priv, struct sk_buff *skb, const struct nf
     struct iphdr *iph;
     unsigned int verdict;
 
-    sb = skb;
-    // insert code to keep skbuff here
+    // copy and add to queue
+    sb = skb_copy(skb, GFP_KERNEL);
+    skb_queue_tail(custom_head, sb);
 
     // then try to read from new skb
 
@@ -45,16 +50,30 @@ static int __init ocl_firewall_init(void)
 
         nf_register_net_hook(&init_net, check_rules_ops);
     }
+
     printk(KERN_INFO "OCL FIREWALL LOADED\n");
     return 0;
 }
 
 static void __exit ocl_firewall_exit(void)
 {
+    struct sk_buff *temp;
     if (check_rules_ops != NULL)
     {
         nf_unregister_net_hook(&init_net, check_rules_ops);
         kfree(check_rules_ops);
+    }
+
+    while (skb_queue_len(custom_head) > 0)
+    {
+        temp = custom_head->next;
+        skb_unlink(temp);
+        kfree_skbmem(temp);
+    }
+
+    if (custom_head != NULL)
+    {
+        free(custom_head);
     }
     printk(KERN_INFO "OCL FIREWALL REMOVED\n");
 }
