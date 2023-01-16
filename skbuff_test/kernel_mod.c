@@ -68,7 +68,8 @@ static void __exit ocl_firewall_exit(void)
     {
         temp = custom_head->next;
         skb_unlink(temp, custom_head);
-        kfree_skbmem(temp);
+        // kfree_skbmem(temp);
+        kfree_skb(temp);
     }
 
     if (custom_head != NULL)
