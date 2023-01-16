@@ -78,5 +78,6 @@ static void __exit ocl_firewall_exit(void)
     printk(KERN_INFO "OCL FIREWALL REMOVED\n");
 }
 
+MODULE_LICENSE("GPL");
 module_init(ocl_firewall_init);
 module_exit(ocl_firewall_exit);
