@@ -67,13 +67,13 @@ static void __exit ocl_firewall_exit(void)
     while (skb_queue_len(custom_head) > 0)
     {
         temp = custom_head->next;
-        skb_unlink(temp);
+        skb_unlink(temp, custom_head);
         kfree_skbmem(temp);
     }
 
     if (custom_head != NULL)
     {
-        free(custom_head);
+        kfree(custom_head);
     }
     printk(KERN_INFO "OCL FIREWALL REMOVED\n");
 }
