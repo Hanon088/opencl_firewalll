@@ -33,8 +33,8 @@ check_rules(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
     dest_ip = ntohl(iph->daddr);
     printk(KERN_INFO "OCL FIREWALL s %u.%u.%u.%u d %u.%u.%u.%u\n", ((unsigned char *)&source_ip)[3], ((unsigned char *)&source_ip)[2], ((unsigned char *)&source_ip)[1], ((unsigned char *)&source_ip)[0], ((unsigned char *)&dest_ip)[3], ((unsigned char *)&dest_ip)[2], ((unsigned char *)&dest_ip)[1], ((unsigned char *)&dest_ip)[0]);
 
-    // verdict = NF_ACCEPT;
-    verdict = NF_STOLEN;
+    verdict = NF_ACCEPT;
+    // verdict = NF_STOLEN;
     return verdict;
 }
 
