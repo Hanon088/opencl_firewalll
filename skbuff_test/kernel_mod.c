@@ -52,7 +52,7 @@ static int __init ocl_firewall_init(void)
         nf_register_net_hook(&init_net, check_rules_ops);
     }
 
-    custom_head = kmalloc(sizeof(sk_buff_head), GFP_KERNEL);
+    custom_head = kmalloc(sizeof(struct sk_buff_head), GFP_KERNEL);
     printk(KERN_INFO "OCL FIREWALL LOADED\n");
     return 0;
 }
