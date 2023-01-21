@@ -8,7 +8,7 @@
 #include <linux/skbuff.h>
 
 static struct nf_hook_ops *check_rules_ops = NULL;
-struct sk_buff_head *custom_head;
+// struct sk_buff_head *custom_head;
 
 static unsigned int
 check_rules(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
@@ -24,7 +24,7 @@ check_rules(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 
     // copy and add to queue
     sb = skb_copy(skb, GFP_KERNEL);
-    skb_queue_tail(custom_head, sb);
+    // skb_queue_tail(custom_head, sb);
 
     // then try to read from new skb
 
@@ -52,7 +52,7 @@ static int __init ocl_firewall_init(void)
         nf_register_net_hook(&init_net, check_rules_ops);
     }
 
-    custom_head = kmalloc(sizeof(struct sk_buff_head), GFP_KERNEL);
+    // custom_head = kmalloc(sizeof(struct sk_buff_head), GFP_KERNEL);
     printk(KERN_INFO "OCL FIREWALL LOADED\n");
     return 0;
 }
@@ -66,7 +66,7 @@ static void __exit ocl_firewall_exit(void)
         kfree(check_rules_ops);
     }
 
-    while (skb_queue_len(custom_head) > 0)
+    /*while (skb_queue_len(custom_head) > 0)
     {
         temp = custom_head->next;
         skb_unlink(temp, custom_head);
@@ -77,7 +77,7 @@ static void __exit ocl_firewall_exit(void)
     if (custom_head != NULL)
     {
         kfree(custom_head);
-    }
+    }*/
     printk(KERN_INFO "OCL FIREWALL REMOVED\n");
 }
 
