@@ -59,7 +59,7 @@ static int __init ocl_firewall_init(void)
 
 static void __exit ocl_firewall_exit(void)
 {
-    struct sk_buff *temp;
+    // struct sk_buff *temp;
     if (check_rules_ops != NULL)
     {
         nf_unregister_net_hook(&init_net, check_rules_ops);
