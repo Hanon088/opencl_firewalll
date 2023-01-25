@@ -124,6 +124,6 @@ void load_rules(char *filename)
 int main()
 {
     load_rules(ruleFileName);
-    // printf("IP ADDR %u.%u.%u.%u\n", printable_ip(ruleList->source_ip));
+    printf("IP ADDR %u.%u.%u.%u\n", ((unsigned char *)&ruleList->source_ip)[3], ((unsigned char *)&ruleList->source_ip)[2], ((unsigned char *)&ruleList->source_ip)[1], ((unsigned char *)&ruleList->source_ip)[0]);
     return 0;
 }
