@@ -68,6 +68,7 @@ struct ipv4Rule *parseRule(char *ruleString)
     rule->source_port = (unsigned int)sPort;
     rule->dest_port = (unsigned int)dPort;
     rule->ip_protocol = (unsigned int)protocol;
+    printf("just used parseRule\n");
     return rule;
 }
 
@@ -104,10 +105,12 @@ void load_rules(char *filename)
             if (!ruleList)
             {
                 ruleList = parseRule(rule);
+                printf("point a is running\n");
             }
             else
             {
                 ruleList->next = parseRule(rule);
+                printf("point b is running\n");
             }
             for (int i = 0; i < countRule; i++)
             {
