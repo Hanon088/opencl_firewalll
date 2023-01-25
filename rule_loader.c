@@ -79,7 +79,7 @@ void load_rules(char *filename)
     size_t ruleSize;
     char temp, rule[100];
     int countBuff = 0, countRule = 0;
-
+    printf("Gonna load files now\n");
     ruleFile = fopen(filename, "r");
     if (!ruleFile)
     {
@@ -93,7 +93,7 @@ void load_rules(char *filename)
     buffer[ruleSize] = '\0';
     fread(buffer, sizeof(char), ruleSize, ruleFile);
     fclose(ruleFile);
-
+    printf("%s", buffer);
     while (temp = buffer[countBuff++] != '\0')
     {
         if (temp == '\n' || temp == '\r')
@@ -127,6 +127,6 @@ void load_rules(char *filename)
 int main()
 {
     load_rules(ruleFileName);
-    printf("IP ADDR %u.%u.%u.%u\n", ((unsigned char *)&(ruleList->source_ip))[3], ((unsigned char *)&(ruleList->source_ip))[2], ((unsigned char *)&(ruleList->source_ip))[1], ((unsigned char *)&(ruleList->source_ip))[0]);
+    // printf("IP ADDR %u.%u.%u.%u\n", ((unsigned char *)&(ruleList->source_ip))[3], ((unsigned char *)&(ruleList->source_ip))[2], ((unsigned char *)&(ruleList->source_ip))[1], ((unsigned char *)&(ruleList->source_ip))[0]);
     return 0;
 }
