@@ -38,7 +38,8 @@ struct ipv4Rule
 };
 
 struct ipv4Rule *ruleList;
-char *ruleFileName = "C:\\Users\\Jack\\Documents\\Year 4 Project\\opencl_firewalll\\rules.txt";
+// char *ruleFileName = "C:\\Users\\Jack\\Documents\\Year 4 Project\\opencl_firewalll\\rules.txt";
+char *ruleFileName = "rules.txt";
 
 int parseIntoIPv4(char *ipStr, uint32_t *binIP)
 {
@@ -123,6 +124,6 @@ void load_rules(char *filename)
 int main()
 {
     load_rules(ruleFileName);
-    printf("IP ADDR %u.%u.%u.%u\n", printable_ip(ruleList->source_ip));
+    // printf("IP ADDR %u.%u.%u.%u\n", printable_ip(ruleList->source_ip));
     return 0;
 }
