@@ -120,6 +120,7 @@ void load_rules(char *filename)
             continue;
         }
         rule[countRule++] = temp;
+        printf("%s", rule);
     }
     free(buffer);
 }
