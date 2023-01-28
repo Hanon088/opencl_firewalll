@@ -37,20 +37,30 @@ struct ipv4Rule
     struct ipv4Rule *next;
 };
 
-struct ipv4Rule *ruleList;
-// char *ruleFileName = "C:\\Users\\Jack\\Documents\\Year 4 Project\\opencl_firewalll\\rules.txt";
-char *ruleFileName = "rules.txt";
+struct ipv4Rule *ruleList = NULL;
+char *ruleFileName = "C:\\Users\\Jack\\Documents\\Year 4 Project\\opencl_firewalll\\rules.txt";
+// char *ruleFileName = "rules.txt";
 
 int parseIntoIPv4(char *ipStr, uint32_t *binIP)
 {
     int bufferInt[4];
     unsigned char bufferChr[4];
-    sscanf(ipStr, "%[^.]%[^.]%[^.]%[^.]", bufferInt[3], bufferInt[2], bufferInt[1], bufferInt[0]);
+    for (int i = 0; i < strlen(ipStr); i++)
+    {
+        if (ipStr[i] == '.')
+        {
+            ipStr[i] = ' ';
+        }
+    }
+    sscanf(ipStr, "%d %d %d %d", &bufferInt[3], &bufferInt[2], &bufferInt[1], &bufferInt[0]);
+    // printf("%d %d %d %d\n", bufferInt[3], bufferInt[2], bufferInt[1], bufferInt[0]);
     bufferChr[0] = (unsigned int)bufferInt[0];
     bufferChr[1] = (unsigned int)bufferInt[1];
     bufferChr[2] = (unsigned int)bufferInt[2];
     bufferChr[3] = (unsigned int)bufferInt[3];
+    // printf("%u %u %u %u\n", bufferChr[3], bufferChr[2], bufferChr[1], bufferChr[0]);
     memcpy(binIP, bufferChr, 4);
+    // printf("%u %u %u %u\n", ((unsigned char *)binIP)[3], ((unsigned char *)binIP)[2], ((unsigned char *)binIP)[1], ((unsigned char *)binIP)[0]);
     return 0;
 }
 
@@ -61,6 +71,7 @@ struct ipv4Rule *parseRule(char *ruleString)
     struct ipv4Rule *rule;
     rule = malloc(sizeof(struct ipv4Rule));
     sscanf(ruleString, "%s %s %s %s %d %d %d %d", sourceIP, sourceMask, destIP, destMask, &sPort, &dPort, &protocol, &verdict);
+    // printf("%s %s %s %s\n", sourceIP, sourceMask, destIP, destMask);
     parseIntoIPv4(sourceIP, &(rule->source_ip));
     parseIntoIPv4(sourceMask, &(rule->source_ip_mask));
     parseIntoIPv4(destIP, &(rule->dest_ip));
@@ -68,7 +79,6 @@ struct ipv4Rule *parseRule(char *ruleString)
     rule->source_port = (unsigned int)sPort;
     rule->dest_port = (unsigned int)dPort;
     rule->ip_protocol = (unsigned int)protocol;
-    printf("just used parseRule\n");
     return rule;
 }
 
@@ -79,7 +89,6 @@ void load_rules(char *filename)
     size_t ruleSize;
     char temp, rule[100];
     int countBuff = 0, countRule = 0;
-    printf("Gonna load files now\n");
     ruleFile = fopen(filename, "r");
     if (!ruleFile)
     {
@@ -93,34 +102,33 @@ void load_rules(char *filename)
     buffer[ruleSize] = '\0';
     fread(buffer, sizeof(char), ruleSize, ruleFile);
     fclose(ruleFile);
-    printf("%s", buffer);
-    while (temp = buffer[countBuff++] != '\0')
+
+    // change this loop into sscanf?
+    while (countBuff < ruleSize)
     {
-        if (temp == '\n' || temp == '\r')
+        temp = buffer[countBuff++];
+        // printf("%c", temp);
+        if (temp == ';')
         {
-            if (countRule == 0)
-            {
-                continue;
-            }
-            if (!ruleList)
+            if (ruleList == NULL)
             {
                 ruleList = parseRule(rule);
                 printf("point a is running\n");
+                printf("IP ADDR %u.%u.%u.%u\n", printable_ip(ruleList->source_ip));
+                printf("MASK %u.%u.%u.%u\n", printable_ip(ruleList->source_ip_mask));
             }
             else
             {
                 ruleList->next = parseRule(rule);
                 printf("point b is running\n");
             }
-            for (int i = 0; i < countRule; i++)
-            {
-                rule[i] = '\0';
-            }
+            strcpy(rule, '\0' * 99);
             countRule = 0;
+            printf("AAAAAAAA");
             continue;
         }
         rule[countRule++] = temp;
-        printf("%s", rule);
+        // printf("%s\n", rule);
     }
     free(buffer);
 }
@@ -128,6 +136,7 @@ void load_rules(char *filename)
 int main()
 {
     load_rules(ruleFileName);
-    // printf("IP ADDR %u.%u.%u.%u\n", ((unsigned char *)&(ruleList->source_ip))[3], ((unsigned char *)&(ruleList->source_ip))[2], ((unsigned char *)&(ruleList->source_ip))[1], ((unsigned char *)&(ruleList->source_ip))[0]);
+    // ruleList = malloc(sizeof(struct ipv4Rule *));
+    // printf("IP ADDR %u.%u.%u.%u\n", ((unsigned char *)&ruleList->source_ip)[3], ((unsigned char *)&ruleList->source_ip)[2], ((unsigned char *)&ruleList->source_ip)[1], ((unsigned char *)&ruleList->source_ip)[0]);
     return 0;
 }
