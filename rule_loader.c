@@ -64,22 +64,22 @@ int parseIntoIPv4(char *ipStr, uint32_t *binIP)
     return 0;
 }
 
-struct ipv4Rule *parseRule(char *ruleString)
+int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
 {
     char sourceIP[16], sourceMask[16], destIP[16], destMask[16];
     int sPort, dPort, protocol, verdict;
-    struct ipv4Rule *rule;
-    rule = malloc(sizeof(struct ipv4Rule));
+    /*struct ipv4Rule *rule;
+    rule = malloc(sizeof(struct ipv4Rule));*/
     sscanf(ruleString, "%s %s %s %s %d %d %d %d", sourceIP, sourceMask, destIP, destMask, &sPort, &dPort, &protocol, &verdict);
     // printf("%s %s %s %s\n", sourceIP, sourceMask, destIP, destMask);
-    parseIntoIPv4(sourceIP, &(rule->source_ip));
-    parseIntoIPv4(sourceMask, &(rule->source_ip_mask));
-    parseIntoIPv4(destIP, &(rule->dest_ip));
-    parseIntoIPv4(destMask, &(rule->dest_ip_mask));
-    rule->source_port = (unsigned int)sPort;
-    rule->dest_port = (unsigned int)dPort;
-    rule->ip_protocol = (unsigned int)protocol;
-    return rule;
+    parseIntoIPv4(sourceIP, &(ruleAddr->source_ip));
+    parseIntoIPv4(sourceMask, &(ruleAddr->source_ip_mask));
+    parseIntoIPv4(destIP, &(ruleAddr->dest_ip));
+    parseIntoIPv4(destMask, &(ruleAddr->dest_ip_mask));
+    ruleAddr->source_port = (unsigned int)sPort;
+    ruleAddr->dest_port = (unsigned int)dPort;
+    ruleAddr->ip_protocol = (unsigned int)protocol;
+    return 0;
 }
 
 void load_rules(char *filename)
@@ -90,6 +90,7 @@ void load_rules(char *filename)
     char temp, rule[100];
     int countBuff = 0, countRule = 0;
     ruleFile = fopen(filename, "r");
+    struct ipv4Rule *tempRule;
     if (!ruleFile)
     {
         fprintf(stderr, "Rule File Not Found\n");
@@ -102,6 +103,7 @@ void load_rules(char *filename)
     buffer[ruleSize] = '\0';
     fread(buffer, sizeof(char), ruleSize, ruleFile);
     fclose(ruleFile);
+    // printf("%s\nruleSize: %d\n", buffer, ruleSize);
 
     // change this loop into sscanf?
     while (countBuff < ruleSize)
@@ -112,23 +114,28 @@ void load_rules(char *filename)
         {
             if (ruleList == NULL)
             {
-                ruleList = parseRule(rule);
-                printf("point a is running\n");
+                ruleList = malloc(sizeof(struct ipv4Rule));
+                parseRule(rule, ruleList);
+                /*printf("point a is running\n");
                 printf("IP ADDR %u.%u.%u.%u\n", printable_ip(ruleList->source_ip));
                 printf("MASK %u.%u.%u.%u\n", printable_ip(ruleList->source_ip_mask));
+                printf("UINT %u\n", ruleList->source_ip);
+                printf("ADDR %p\n", ruleList);*/
             }
             else
             {
-                ruleList->next = parseRule(rule);
-                printf("point b is running\n");
+                tempRule = malloc(sizeof(struct ipv4Rule));
+                parseRule(rule, tempRule);
+                ruleList->next = tempRule;
+                // printf("point b is running\n");
             }
-            strcpy(rule, '\0' * 99);
+            memset(buffer, 0, sizeof(buffer));
             countRule = 0;
-            printf("AAAAAAAA");
             continue;
         }
         rule[countRule++] = temp;
-        // printf("%s\n", rule);
+        // printf("RULESIZE: %d, COUNTBUFF: %d, COUNTRULE: %d, TEMP: %c\n", ruleSize, countBuff, countRule, temp);
+        //  printf("%s\n", rule);
     }
     free(buffer);
 }
@@ -136,7 +143,9 @@ void load_rules(char *filename)
 int main()
 {
     load_rules(ruleFileName);
-    // ruleList = malloc(sizeof(struct ipv4Rule *));
-    // printf("IP ADDR %u.%u.%u.%u\n", ((unsigned char *)&ruleList->source_ip)[3], ((unsigned char *)&ruleList->source_ip)[2], ((unsigned char *)&ruleList->source_ip)[1], ((unsigned char *)&ruleList->source_ip)[0]);
+    struct ipv4Rule *tempRule = ruleList;
+    printf("IP ADDR %u.%u.%u.%u, MASK %u.%u.%u.%u\n", printable_ip(tempRule->source_ip), printable_ip(tempRule->source_ip_mask));
+    tempRule = tempRule->next;
+    printf("IP ADDR %u.%u.%u.%u, MASK %u.%u.%u.%u\n", printable_ip(tempRule->source_ip), printable_ip(tempRule->source_ip_mask));
     return 0;
 }
