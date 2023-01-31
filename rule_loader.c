@@ -53,14 +53,11 @@ int parseIntoIPv4(char *ipStr, uint32_t *binIP)
         }
     }
     sscanf(ipStr, "%d %d %d %d", &bufferInt[3], &bufferInt[2], &bufferInt[1], &bufferInt[0]);
-    // printf("%d %d %d %d\n", bufferInt[3], bufferInt[2], bufferInt[1], bufferInt[0]);
     bufferChr[0] = (unsigned int)bufferInt[0];
     bufferChr[1] = (unsigned int)bufferInt[1];
     bufferChr[2] = (unsigned int)bufferInt[2];
     bufferChr[3] = (unsigned int)bufferInt[3];
-    // printf("%u %u %u %u\n", bufferChr[3], bufferChr[2], bufferChr[1], bufferChr[0]);
     memcpy(binIP, bufferChr, 4);
-    // printf("%u %u %u %u\n", ((unsigned char *)binIP)[3], ((unsigned char *)binIP)[2], ((unsigned char *)binIP)[1], ((unsigned char *)binIP)[0]);
     return 0;
 }
 
@@ -68,10 +65,7 @@ int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
 {
     char sourceIP[16], sourceMask[16], destIP[16], destMask[16];
     int sPort, dPort, protocol, verdict;
-    /*struct ipv4Rule *rule;
-    rule = malloc(sizeof(struct ipv4Rule));*/
     sscanf(ruleString, "%s %s %s %s %d %d %d %d", sourceIP, sourceMask, destIP, destMask, &sPort, &dPort, &protocol, &verdict);
-    // printf("%s %s %s %s\n", sourceIP, sourceMask, destIP, destMask);
     parseIntoIPv4(sourceIP, &(ruleAddr->source_ip));
     parseIntoIPv4(sourceMask, &(ruleAddr->source_ip_mask));
     parseIntoIPv4(destIP, &(ruleAddr->dest_ip));
@@ -103,39 +97,28 @@ void load_rules(char *filename)
     buffer[ruleSize] = '\0';
     fread(buffer, sizeof(char), ruleSize, ruleFile);
     fclose(ruleFile);
-    // printf("%s\nruleSize: %d\n", buffer, ruleSize);
 
-    // change this loop into sscanf?
     while (countBuff < ruleSize)
     {
         temp = buffer[countBuff++];
-        // printf("%c", temp);
         if (temp == ';')
         {
             if (ruleList == NULL)
             {
                 ruleList = malloc(sizeof(struct ipv4Rule));
                 parseRule(rule, ruleList);
-                /*printf("point a is running\n");
-                printf("IP ADDR %u.%u.%u.%u\n", printable_ip(ruleList->source_ip));
-                printf("MASK %u.%u.%u.%u\n", printable_ip(ruleList->source_ip_mask));
-                printf("UINT %u\n", ruleList->source_ip);
-                printf("ADDR %p\n", ruleList);*/
             }
             else
             {
                 tempRule = malloc(sizeof(struct ipv4Rule));
                 parseRule(rule, tempRule);
                 ruleList->next = tempRule;
-                // printf("point b is running\n");
             }
             memset(buffer, 0, sizeof(buffer));
             countRule = 0;
             continue;
         }
         rule[countRule++] = temp;
-        // printf("RULESIZE: %d, COUNTBUFF: %d, COUNTRULE: %d, TEMP: %c\n", ruleSize, countBuff, countRule, temp);
-        //  printf("%s\n", rule);
     }
     free(buffer);
 }
@@ -147,5 +130,6 @@ int main()
     printf("IP ADDR %u.%u.%u.%u, MASK %u.%u.%u.%u\n", printable_ip(tempRule->source_ip), printable_ip(tempRule->source_ip_mask));
     tempRule = tempRule->next;
     printf("IP ADDR %u.%u.%u.%u, MASK %u.%u.%u.%u\n", printable_ip(tempRule->source_ip), printable_ip(tempRule->source_ip_mask));
+    // free not implemented yet
     return 0;
 }
