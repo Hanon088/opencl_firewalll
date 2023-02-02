@@ -18,6 +18,7 @@
 
 #include "variables.h"
 #include "compare.h"
+#include "rule_loader.h"
 
 long int packet_count = 0;
 long int batch_num = 0;
@@ -40,7 +41,10 @@ struct callbackStruct *tailArray[ip_array_size];
 static pthread_mutex_t mtx[ip_array_size];
 static int packetNumInQ[ip_array_size];
 
-static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
+struct ipv4Rule *ruleList = NULL;
+
+static int
+netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
     int queueNum, rcv_len, err;
     struct callbackStruct *localBuff, *lastBuff;
@@ -295,6 +299,8 @@ int main()
     struct callbackStruct *tempNode;
     unsigned char string_ip[4];
 
+    ruleList = malloc(sizeof(struct ipv4Rule));
+    load_rules(ruleFileName, ruleList);
     // initialize data copy ip and set rule_ip(uint32_t array)
     for (int i = 0; i < rule_array_size; i++)
     {

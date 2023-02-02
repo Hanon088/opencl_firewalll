@@ -3,3 +3,5 @@
 extern const char *source;
 extern const char *func_compare;
 extern const char *func_sync;
+
+extern const char *ruleFileName;

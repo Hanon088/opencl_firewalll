@@ -3,11 +3,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define printable_ip(addr)           \
-    ((unsigned char *)&addr)[3],     \
-        ((unsigned char *)&addr)[2], \
-        ((unsigned char *)&addr)[1], \
-        ((unsigned char *)&addr)[0]
+#include "compare.h"
+#include "variables.h"
+#include "rule_loader.h"
 
 struct ipv4Rule
 {
@@ -37,9 +35,9 @@ struct ipv4Rule
     struct ipv4Rule *next;
 };
 
-struct ipv4Rule *ruleList = NULL;
-char *ruleFileName = "C:\\Users\\Jack\\Documents\\Year 4 Project\\opencl_firewalll\\rules.txt";
-// char *ruleFileName = "rules.txt";
+// struct ipv4Rule *ruleList = NULL;
+//  char *ruleFileName = "C:\\Users\\Jack\\Documents\\Year 4 Project\\opencl_firewalll\\rules.txt";
+//   char *ruleFileName = "rules.txt";
 
 int parseIntoIPv4(char *ipStr, uint32_t *binIP)
 {
@@ -76,7 +74,7 @@ int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
     return 0;
 }
 
-void load_rules(char *filename)
+int load_rules(char *filename, struct ipv4Rule *ruleList)
 {
     FILE *ruleFile;
     char *buffer;
@@ -85,6 +83,7 @@ void load_rules(char *filename)
     int countBuff = 0, countRule = 0;
     ruleFile = fopen(filename, "r");
     struct ipv4Rule *tempRule;
+    int headLoaded = 0;
     if (!ruleFile)
     {
         fprintf(stderr, "Rule File Not Found\n");
@@ -103,10 +102,11 @@ void load_rules(char *filename)
         temp = buffer[countBuff++];
         if (temp == ';')
         {
-            if (ruleList == NULL)
+            if (!headLoaded)
             {
-                ruleList = malloc(sizeof(struct ipv4Rule));
+                // ruleList = malloc(sizeof(struct ipv4Rule));
                 parseRule(rule, ruleList);
+                headLoaded = 1;
             }
             else
             {
@@ -121,9 +121,13 @@ void load_rules(char *filename)
         rule[countRule++] = temp;
     }
     free(buffer);
+    return 0;
 }
 
-int main()
+int freeRules(struct ipv4Rule *ruleList)
+{
+}
+/*int main()
 {
     load_rules(ruleFileName);
     struct ipv4Rule *tempRule = ruleList;
@@ -132,4 +136,4 @@ int main()
     printf("IP ADDR %u.%u.%u.%u, MASK %u.%u.%u.%u\n", printable_ip(tempRule->source_ip), printable_ip(tempRule->source_ip_mask));
     // free not implemented yet
     return 0;
-}
+}*/
