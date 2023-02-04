@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include "variables.h"
+
 #define printable_ip(addr)           \
     ((unsigned char *)&addr)[3],     \
         ((unsigned char *)&addr)[2], \
