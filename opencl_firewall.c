@@ -298,9 +298,23 @@ int main()
     int queueNum[ip_array_size];
     struct callbackStruct *tempNode;
     unsigned char string_ip[4];
+    uint64_t tempAddr[2], tempMask[2];
+    uint32_t sAddr, dAddr, sMask, dMask;
+    int ruleNum;
 
     ruleList = malloc(sizeof(struct ipv4Rule));
-    load_rules(ruleFileName, ruleList);
+    ruleNum = load_rules(ruleFileName, ruleList);
+    ruleListToArr(ruleList, &tempAddr, &tempMask);
+    for (int i = 0; i < ruleNum; i++)
+    {
+        memcpy(&sAddr, tempAddr[i], 4);
+        memcpy(&dAddr, tempAddr[i] + 4, 4);
+        memcpy(&sMask, tempMask[i], 4);
+        memcpy(&dMask, tempMask[i] + 4, 4);
+        printf("SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u\n", printable_ip(sAddr), printable_ip(sMask), printable_ip(dAddr), printable_ip(dMask));
+    }
+    return 0;
+
     // initialize data copy ip and set rule_ip(uint32_t array)
     for (int i = 0; i < rule_array_size; i++)
     {
