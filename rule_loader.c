@@ -43,6 +43,7 @@ int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
     ruleAddr->source_port = (unsigned int)sPort;
     ruleAddr->dest_port = (unsigned int)dPort;
     ruleAddr->ip_protocol = (unsigned int)protocol;
+    ruleAddr->next = NULL;
     return 0;
 }
 
@@ -110,26 +111,21 @@ int freeRules(struct ipv4Rule *ruleList)
     return 0;
 }
 
-int ruleListToArr(struct ipv4Rule *ruleList, uint64_t *sdAddr, uint64_t *sdMask)
+int ruleListToArr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t*dMask)
 {
     struct ipv4Rule *temp = ruleList;
-    uint64_t addrBuff, maskBuff;
-    while (!temp)
+    int count = 0;
+    while (1)
     {
-        /*
-        //extended "safe" form
-        memcpy(&addrBuff, temp->source_ip, 4);
-        memcpy(&addrBuff + 4, temp->dest_ip, 4);
-        memcpy(&maskBuff, temp->source_ip_mask, 4);
-        memcpy(&maskBuff + 4, temp->dest_ip_mask, 4);
-
-        memcpy(sdAddr, &addrBuff, 8);
-        memcpy(sdMask, &maskBuff, 8);
-        */
-
-        // madness, but should work due to source and dest being adjacent in struct memory
-        memcpy(sdAddr, &temp->source_ip, 8);
-        memcpy(sdMask, &temp->source_ip_mask, 8);
+        
+        memcpy(&sAddr[count], &temp->source_ip, 4);
+        memcpy(&dAddr[count], &temp->dest_ip, 4);
+        memcpy(&sMask[count], &temp->source_ip_mask, 4);
+        memcpy(&dMask[count], &temp->dest_ip_mask, 4);
+        if(!(temp->next)){
+            break;
+        }
+        count++;
         temp = temp->next;
     }
     return 0;
