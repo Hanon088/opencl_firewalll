@@ -298,8 +298,8 @@ int main()
     int queueNum[ip_array_size];
     struct callbackStruct *tempNode;
     unsigned char string_ip[4];
-    uint32_t sAddr[2], dAddr[2], sMask[2], dMask[2];
-    int tempVerdict[2];
+    uint32_t sAddr[rule_array_size], dAddr[rule_array_size], sMask[rule_array_size], dMask[rule_array_size];
+    int tempVerdict[rule_array_size];
     int ruleNum;
 
     ruleList = malloc(sizeof(struct ipv4Rule));
