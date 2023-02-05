@@ -109,13 +109,26 @@ int freeRules(struct ipv4Rule *ruleList)
     return 0;
 }
 
-/*int main()
+int ruleListToArr(struct ipv4Rule *ruleList, uint64_t *sdAddr, uint64_t *sdMask)
 {
-    load_rules(ruleFileName);
-    struct ipv4Rule *tempRule = ruleList;
-    printf("IP ADDR %u.%u.%u.%u, MASK %u.%u.%u.%u\n", printable_ip(tempRule->source_ip), printable_ip(tempRule->source_ip_mask));
-    tempRule = tempRule->next;
-    printf("IP ADDR %u.%u.%u.%u, MASK %u.%u.%u.%u\n", printable_ip(tempRule->source_ip), printable_ip(tempRule->source_ip_mask));
-    // free not implemented yet
+    struct ipv4Rule *temp = ruleList;
+    uint64_t addrBuff, maskBuff;
+    while (!temp)
+    {
+        /*
+        //extended "safe" form
+        memcpy(&addrBuff, temp->source_ip, 4);
+        memcpy(&addrBuff + 4, temp->dest_ip, 4);
+        memcpy(&maskBuff, temp->source_ip_mask, 4);
+        memcpy(&maskBuff + 4, temp->dest_ip_mask, 4);
+
+        memcpy(sdAddr, &addrBuff, 8);
+        memcpy(sdMask, &maskBuff, 8);
+        */
+
+        // madness, but should work due to source and dest being adjacent in struct memory
+        memcpy(sdAddr, temp->source_ip, 8);
+        memcpy(sdMask, temp->source_ip_mask, 8);
+    }
     return 0;
-}*/
+}
