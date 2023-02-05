@@ -298,7 +298,7 @@ int main()
     int queueNum[ip_array_size];
     struct callbackStruct *tempNode;
     unsigned char string_ip[4];
-    uint32_t sAddr[rule_array_size], dAddr[rule_array_size], sMask[rule_array_size], dMask[rule_array_size];
+    uint32_t sAddr[rule_array_size], dAddr[rule_array_size], sMask[rule_array_size], dMask[rule_array_size], mergeBuff[2];
     int tempVerdict[rule_array_size];
     int ruleNum;
 
@@ -306,15 +306,24 @@ int main()
     ruleNum = load_rules(ruleFileName, ruleList);
     printf("Number of rules %d\n", ruleNum);
     ruleListToArr(ruleList, sAddr, sMask, dAddr, dMask, tempVerdict);
-    for (int i = 0; i < ruleNum; i++)
+    /*for (int i = 0; i < ruleNum; i++)
     {
         printf("SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u Verdict: %d\n", printable_ip(sAddr[i]), printable_ip(sMask[i]), printable_ip(dAddr[i]), printable_ip(dMask[i]), tempVerdict[i]);
-    }
+    }*/
     freeRules(ruleList);
-    return 0;
 
-    // initialize data copy ip and set rule_ip(uint32_t array)
     for (int i = 0; i < rule_array_size; i++)
+    {
+        mergeBuff[0] = sAddr[i];
+        mergeBuff[1] = dAddr[i];
+        memcpy(&rule_ip[i], mergeBuff, 8);
+        mergeBuff[0] = sMask[i];
+        mergeBuff[1] = dMsMask[i];
+        memcpy(&mask[i], mergeBuff, 8);
+        rule_verdict[i] = tempVerdict[i];
+    }
+    // initialize data copy ip and set rule_ip(uint32_t array)
+    /*for (int i = 0; i < rule_array_size; i++)
     {
         string_ip[3] = (unsigned int)192;
         string_ip[2] = (unsigned int)168 + i;
@@ -327,7 +336,7 @@ int main()
         string_ip[0] = (unsigned int)0;
         memcpy(&mask[i], string_ip, 4);
         rule_verdict[i] = (i % 2 == 0);
-    }
+    }*/
 
     for (int i = 0; i < ip_array_size; i++)
     {
