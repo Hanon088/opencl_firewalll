@@ -45,6 +45,7 @@ int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
     ruleAddr->ip_protocol = (unsigned int)protocol;
     ruleAddr->verdict = verdict;
     ruleAddr->next = NULL;
+
     return 0;
 }
 
@@ -56,7 +57,7 @@ int load_rules(const char *filename, struct ipv4Rule *ruleList)
     char temp, rule[100];
     int countBuff = 0, countRule = 0, ruleNum = 0;
     ruleFile = fopen(filename, "r");
-    struct ipv4Rule *tempRule;
+    struct ipv4Rule *newRule, *tempRule = NULL;
     int headLoaded = 0;
     if (!ruleFile)
     {
@@ -84,13 +85,19 @@ int load_rules(const char *filename, struct ipv4Rule *ruleList)
             {
                 // ruleList = malloc(sizeof(struct ipv4Rule));
                 parseRule(rule, ruleList);
+                tempRule = ruleList;
                 headLoaded = 1;
             }
             else
             {
-                tempRule = malloc(sizeof(struct ipv4Rule));
-                parseRule(rule, tempRule);
-                ruleList->next = tempRule;
+                newRule = malloc(sizeof(struct ipv4Rule));
+                parseRule(rule, newRule);
+                while (tempRule->next != NULL)
+                {
+                    tempRule = tempRule->next;
+                }
+                
+                tempRule->next = newRule;
             }
             memset(buffer, 0, sizeof(buffer));
             countRule = 0;
