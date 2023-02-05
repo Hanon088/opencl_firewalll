@@ -299,15 +299,16 @@ int main()
     struct callbackStruct *tempNode;
     unsigned char string_ip[4];
     uint32_t sAddr[2], dAddr[2], sMask[2], dMask[2];
+    int tempVerdict[2];
     int ruleNum;
 
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(ruleFileName, ruleList);
     printf("Number of rules %d\n", ruleNum);
-    ruleListToArr(ruleList, sAddr, sMask, dAddr, dMask);
+    ruleListToArr(ruleList, sAddr, sMask, dAddr, dMask, tempVerdict);
     for (int i = 0; i < ruleNum; i++)
     {
-        printf("SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u\n", printable_ip(sAddr[i]), printable_ip(sMask[i]), printable_ip(dAddr[i]), printable_ip(dMask[i]));
+        printf("SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u Verdict: %d\n", printable_ip(sAddr[i]), printable_ip(sMask[i]), printable_ip(dAddr[i]), printable_ip(dMask[i]), tempVerdict[i]);
     }
     freeRules(ruleList);
     return 0;
