@@ -43,6 +43,7 @@ int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
     ruleAddr->source_port = (unsigned int)sPort;
     ruleAddr->dest_port = (unsigned int)dPort;
     ruleAddr->ip_protocol = (unsigned int)protocol;
+    ruleAddr->verdict = verdict;
     ruleAddr->next = NULL;
     return 0;
 }
