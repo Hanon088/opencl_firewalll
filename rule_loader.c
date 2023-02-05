@@ -98,7 +98,17 @@ int load_rules(const char *filename, struct ipv4Rule *ruleList)
 
 int freeRules(struct ipv4Rule *ruleList)
 {
+    struct ipv4Rule *temp = ruleList;
+
+    while (!temp)
+    {
+        ruleList = ruleList->next;
+        free(temp);
+        temp = ruleList;
+    }
+    return 0;
 }
+
 /*int main()
 {
     load_rules(ruleFileName);
