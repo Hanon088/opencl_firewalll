@@ -318,7 +318,7 @@ int main()
         mergeBuff[1] = dAddr[i];
         memcpy(&rule_ip[i], mergeBuff, 8);
         mergeBuff[0] = sMask[i];
-        mergeBuff[1] = dMsMask[i];
+        mergeBuff[1] = dMask[i];
         memcpy(&mask[i], mergeBuff, 8);
         rule_verdict[i] = tempVerdict[i];
     }
