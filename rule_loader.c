@@ -74,6 +74,10 @@ int load_rules(const char *filename, struct ipv4Rule *ruleList)
     while (countBuff < ruleSize)
     {
         temp = buffer[countBuff++];
+        if (temp == '\n' || temp == '\r')
+        {
+            continue;
+        }
         if (temp == ';')
         {
             if (!headLoaded)
