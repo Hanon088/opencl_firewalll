@@ -52,7 +52,7 @@ int load_rules(const char *filename, struct ipv4Rule *ruleList)
     char *buffer;
     size_t ruleSize;
     char temp, rule[100];
-    int countBuff = 0, countRule = 0;
+    int countBuff = 0, countRule = 0, ruleNum = 0;
     ruleFile = fopen(filename, "r");
     struct ipv4Rule *tempRule;
     int headLoaded = 0;
@@ -88,12 +88,13 @@ int load_rules(const char *filename, struct ipv4Rule *ruleList)
             }
             memset(buffer, 0, sizeof(buffer));
             countRule = 0;
+            ruleNum++;
             continue;
         }
         rule[countRule++] = temp;
     }
     free(buffer);
-    return 0;
+    return ruleNum;
 }
 
 int freeRules(struct ipv4Rule *ruleList)
