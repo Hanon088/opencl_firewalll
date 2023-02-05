@@ -129,6 +129,7 @@ int ruleListToArr(struct ipv4Rule *ruleList, uint64_t *sdAddr, uint64_t *sdMask)
         // madness, but should work due to source and dest being adjacent in struct memory
         memcpy(sdAddr, temp->source_ip, 8);
         memcpy(sdMask, temp->source_ip_mask, 8);
+        temp = temp->next;
     }
     return 0;
 }
