@@ -46,6 +46,12 @@ int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
     ruleAddr->verdict = verdict;
     ruleAddr->next = NULL;
 
+    // assumes masks to be the data itself, for now
+    // masks are use to compare cases such as port=ALL
+    ruleAddr->source_port_mask = ruleAddr->source_port;
+    ruleAddr->dest_port_mask = ruleAddr->dest_port_mask;
+    ruleAddr->ip_protocol_mask = ruleAddr->ip_protocol;
+
     return 0;
 }
 
@@ -96,7 +102,7 @@ int load_rules(const char *filename, struct ipv4Rule *ruleList)
                 {
                     tempRule = tempRule->next;
                 }
-                
+
                 tempRule->next = newRule;
             }
             memset(buffer, 0, sizeof(buffer));
