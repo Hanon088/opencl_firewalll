@@ -113,7 +113,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
     localBuff->packet_id = ntohl(ph->packet_id);
     localBuff->ip_protocol = ntohl(ip->protocol);
 
-    if (ip->protocol == IPPROTO_TCP)
+    if (localBuff->ip_protocol == IPPROTO_TCP)
     {
         tcp = nfq_tcp_get_hdr(pkBuff);
         if (!tcp)
@@ -127,7 +127,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
             localBuff->dest_port = ntohl(tcp->dest);
         }
     }
-    else if (ip->protocol == IPPROTO_UDP)
+    else if (localBuff->ip_protocol == IPPROTO_UDP)
     {
         udp = nfq_udp_get_hdr(pkBuff);
         if (!udp)
