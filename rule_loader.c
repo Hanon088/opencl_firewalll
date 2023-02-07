@@ -129,7 +129,7 @@ int freeRules(struct ipv4Rule *ruleList)
     return 0;
 }
 
-int ruleListToArr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t *dMask, int *verdictArr)
+int ruleListToArr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t *dMask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr)
 {
     struct ipv4Rule *temp = ruleList;
     int count = 0;
@@ -140,7 +140,13 @@ int ruleListToArr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, u
         memcpy(&dAddr[count], &temp->dest_ip, 4);
         memcpy(&sMask[count], &temp->source_ip_mask, 4);
         memcpy(&dMask[count], &temp->dest_ip_mask, 4);
+
+        memcpy(&protoArr[count], &temp->ip_protocol, 1);
+        memcpy(&sPortArr[count], &temp->source_port, 2);
+        memcpy(&dPortArr[count], &temp->dest_port, 2);
+
         memcpy(&verdictArr[count], &temp->verdict, sizeof(int));
+
         if (!(temp->next))
         {
             break;

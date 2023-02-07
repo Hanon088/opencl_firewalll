@@ -30,4 +30,4 @@ struct ipv4Rule
 
 int load_rules(const char *filename, struct ipv4Rule *ruleList);
 int freeRules(struct ipv4Rule *ruleList);
-int ruleListToArr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t *dMask, int *verdictArr);
+int ruleListToArr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t *dMask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr);
