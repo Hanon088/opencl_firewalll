@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <linux/netfilter.h>
 #include <libnetfilter_queue/libnetfilter_queue.h>
 #include <libnetfilter_queue/pktbuff.h>
@@ -34,6 +35,10 @@ struct callbackStruct
     uint32_t source_ip;
     uint32_t dest_ip;
     uint32_t packet_id;
+
+    uint8_t ip_protocol;
+    uint16_t source_port;
+    uint16_t dest_port;
 };
 
 struct callbackStruct *callbackStructArray[ip_array_size];
@@ -52,7 +57,9 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
     struct pkt_buff *pkBuff;
     struct iphdr *ip;
     struct nfqnl_msg_packet_hdr *ph;
-    uint32_t source_ip, dest_ip;
+    struct tcphdr *tcp;
+    struct udphdr *udp;
+    // uint32_t source_ip, dest_ip;
 
     localBuff = malloc(sizeof(struct callbackStruct));
     lastBuff = NULL;
@@ -103,6 +110,20 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
     localBuff->source_ip = ntohl(ip->saddr);
     localBuff->dest_ip = ntohl(ip->daddr);
     localBuff->packet_id = ntohl(ph->packet_id);
+    localBuff->ip_protocol = ntohl(ip->protocol);
+
+    if (ip->protocol == IPPROTO_TCP)
+    {
+        tcp = nfq_tcp_get_hdr(pkBuff);
+        localBuff->source_port = ntohl(tcp->sport);
+        localBuff->dest_port = ntohl(tcp->dport);
+    }
+    else if (ip->protocol == IPPROTO_UDP)
+    {
+        udp = nfq_udp_get_hdr(pkBuff);
+        localBuff->source_port = ntohl(udp->sport);
+        localBuff->dest_port = ntohl(udp->dport);
+    }
 
     pktb_free(pkBuff);
 
