@@ -117,6 +117,8 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         tcp = nfq_tcp_get_hdr(pkBuff);
         if (!tcp)
         {
+            localBuff->source_port = 0;
+            localBuff->dest_port = 0;
         }
         else
         {
@@ -129,12 +131,19 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         udp = nfq_udp_get_hdr(pkBuff);
         if (!udp)
         {
+            localBuff->source_port = 0;
+            localBuff->dest_port = 0;
         }
         else
         {
             localBuff->source_port = ntohl(udp->source);
             localBuff->dest_port = ntohl(udp->dest);
         }
+    }
+    else
+    {
+        localBuff->source_port = 0;
+        localBuff->dest_port = 0;
     }
 
     pktb_free(pkBuff);
@@ -210,6 +219,8 @@ void *verdictThread()
     int err;
     // uint32_t source_ip, dest_ip;
     uint32_t ip_addr[2] __attribute__((aligned));
+    uint16_t sPort, dPort;
+    uint8_t protocol;
     struct callbackStruct *tempNode;
     uint64_t array_ip_input[ip_array_size];
 
@@ -250,9 +261,12 @@ void *verdictThread()
         {
             ip_addr[0] = callbackStructArray[i]->source_ip;
             ip_addr[1] = callbackStructArray[i]->dest_ip;
+            protocol = callbackStructArray[i]->ip_protocol;
+            sPort = callbackStructArray[i]->source_port;
+            dPort = callbackStructArray[i]->dest_port;
             // printf("Q: %p NFAD %p\n", callbackStructArray[i]->queue, callbackStructArray[i]->nfad);
             printf("QUEUE %d PACKET ID: %u\n", i, callbackStructArray[i]->packet_id);
-            printf("s %u.%u.%u.%u d %u.%u.%u.%u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]));
+            printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), protocol, sPort, dPort);
 
             // array_ip_input[i] = source_ip;
             memcpy(&array_ip_input[i], ip_addr, 8);
