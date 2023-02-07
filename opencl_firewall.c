@@ -115,14 +115,26 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
     if (ip->protocol == IPPROTO_TCP)
     {
         tcp = nfq_tcp_get_hdr(pkBuff);
-        localBuff->source_port = ntohl(tcp->sport);
-        localBuff->dest_port = ntohl(tcp->dport);
+        if (!tcp)
+        {
+        }
+        else
+        {
+            localBuff->source_port = ntohl(tcp->source);
+            localBuff->dest_port = ntohl(tcp->dest);
+        }
     }
     else if (ip->protocol == IPPROTO_UDP)
     {
         udp = nfq_udp_get_hdr(pkBuff);
-        localBuff->source_port = ntohl(udp->sport);
-        localBuff->dest_port = ntohl(udp->dport);
+        if (!udp)
+        {
+        }
+        else
+        {
+            localBuff->source_port = ntohl(udp->source);
+            localBuff->dest_port = ntohl(udp->dest);
+        }
     }
 
     pktb_free(pkBuff);
