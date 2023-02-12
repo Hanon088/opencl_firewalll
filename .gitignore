@@ -16,3 +16,7 @@ nfq_test
 .ocl_firewall.o.d
 user
 out.txt
+CMakeFiles
+cmake_install.cmake
+CMakeCache.txt
+Makefile
