@@ -187,7 +187,7 @@ int main()
         mergeBuff[0] = sMask[i];
         mergeBuff[1] = dMask[i];
         memcpy(&mask[i], mergeBuff, 8);
-        rule_verdict[i] = tempVerdict[i];
+        verdict[i] = tempVerdict[i];
     }
 
     string_ip[3] = (unsigned int)192;
