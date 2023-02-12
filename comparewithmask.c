@@ -149,25 +149,24 @@ int main()
     int verdict[rule_array_size];
     int result[ip_array_size]; // output array order
 
-    // initialize data copy ip and set rule_ip(uint64_t array)
-    verdict[0] = 1;
-    verdict[1] = 0;
-    verdict[2] = 4;
-    verdict[3] = 5;
-    srand(time(0));
-    for (int i = 0; i < rule_array_size; i++)
+    uint32_t sAddr[rule_array_size], dAddr[rule_array_size], sMask[rule_array_size], dMask[rule_array_size], mergeBuff[2];
+    uint16_t sPort[rule_array_size], dPort[rule_array_size];
+    uint8_t protocols[rule_array_size];
+    int tempVerdict[rule_array_size];
+    int ruleNum;
+    struct ipv4Rule *ruleList;
+
+    ruleList = malloc(sizeof(struct ipv4Rule));
+    ruleNum = load_rules(ruleFileName, ruleList);
+    printf("Number of rules %d\n", ruleNum);
+    ruleListToArr(ruleList, sAddr, sMask, dAddr, dMask, protocols, sPort, dPort, tempVerdict);
+    /*for (int i = 0; i < ruleNum; i++)
     {
-        string_ip[3] = (unsigned int)192;
-        string_ip[2] = (unsigned int)168 + (rand() % 10 + 1);
-        string_ip[1] = (unsigned int)0;
-        string_ip[0] = (unsigned int)0;
-        memcpy(&rule_ip[i], string_ip, 4);
-        string_ip[3] = (unsigned int)255;
-        string_ip[2] = (unsigned int)255;
-        string_ip[1] = (unsigned int)0;
-        string_ip[0] = (unsigned int)0;
-        memcpy(&mask[i], string_ip, 4);
-    }
+        printf("SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u Verdict: %d\n", printable_ip(sAddr[i]), printable_ip(sMask[i]), printable_ip(dAddr[i]), printable_ip(dMask[i]), tempVerdict[i]);
+    }*/
+    freeRules(ruleList);
+
+    // initialize data copy ip and set rule_ip(uint64_t array)
 
     for (int i = 0; i < ip_array_size; i++)
     {
@@ -177,6 +176,17 @@ int main()
         string_ip[0] = (unsigned int)1;
         memcpy(&binary_ip, string_ip, 4);
         array_ip_input[i] = binary_ip;
+    }
+
+    for (int i = 0; i < rule_array_size; i++)
+    {
+        mergeBuff[0] = sAddr[i];
+        mergeBuff[1] = dAddr[i];
+        memcpy(&rule_ip[i], mergeBuff, 8);
+        mergeBuff[0] = sMask[i];
+        mergeBuff[1] = dMask[i];
+        memcpy(&mask[i], mergeBuff, 8);
+        rule_verdict[i] = tempVerdict[i];
     }
 
     string_ip[3] = (unsigned int)192;
