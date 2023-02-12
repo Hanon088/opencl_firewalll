@@ -115,7 +115,6 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 
     if (nfq_ip_set_transport_header(pkBuff, ip) < 0)
     {
-        printf("SET TRANSPORT FAILS");
         localBuff->source_port = 0;
         localBuff->dest_port = 0;
     }
@@ -124,14 +123,13 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         tcp = nfq_tcp_get_hdr(pkBuff);
         if (!tcp)
         {
-            printf("GET TCP FAILS");
             localBuff->source_port = 0;
             localBuff->dest_port = 0;
         }
         else
         {
-            localBuff->source_port = ntohl(tcp->source);
-            localBuff->dest_port = ntohl(tcp->dest);
+            localBuff->source_port = ntohs(tcp->source);
+            localBuff->dest_port = ntohs(tcp->dest);
         }
     }
     else if (ip->protocol == IPPROTO_UDP)
@@ -139,14 +137,13 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         udp = nfq_udp_get_hdr(pkBuff);
         if (!udp)
         {
-            printf("GET UDP FAILS");
             localBuff->source_port = 0;
             localBuff->dest_port = 0;
         }
         else
         {
-            localBuff->source_port = ntohl(udp->source);
-            localBuff->dest_port = ntohl(udp->dest);
+            localBuff->source_port = ntohs(udp->source);
+            localBuff->dest_port = ntohs(udp->dest);
         }
     }
     else
