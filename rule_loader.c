@@ -32,6 +32,11 @@ int parseIntoIPv4(char *ipStr, uint32_t *binIP)
 
 int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
 {
+
+    /*
+    source      mask        dest    mask     protocol  sPort  dPort  verdict
+    192.168.0.0 255.255.0.0 0.0.0.0 0.0.0.0  0         0      0      1       ;
+    */
     char sourceIP[16], sourceMask[16], destIP[16], destMask[16];
     int sPort, dPort, protocol, verdict;
     sscanf(ruleString, "%s %s %s %s %d %d %d %d", sourceIP, sourceMask, destIP, destMask, &sPort, &dPort, &protocol, &verdict);
