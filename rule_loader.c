@@ -35,7 +35,7 @@ int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
 {
     char sourceIP[16], sourceMask[16], destIP[16], destMask[16];
     int sPort, dPort, protocol, verdict;
-    sscanf(ruleString, "%s %s %s %s %d %d %d %d", sourceIP, sourceMask, destIP, destMask, &sPort, &dPort, &protocol, &verdict);
+    sscanf(ruleString, "%s %s %s %s %d %d %d %d", sourceIP, sourceMask, destIP, destMask, &protocol, &sPort, &dPort, &verdict);
     parseIntoIPv4(sourceIP, &(ruleAddr->source_ip));
     parseIntoIPv4(sourceMask, &(ruleAddr->source_ip_mask));
     parseIntoIPv4(destIP, &(ruleAddr->dest_ip));
