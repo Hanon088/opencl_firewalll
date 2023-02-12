@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "compare.h"
 #include "variables.h"
 #include "rule_loader.h"
 
