@@ -10,6 +10,7 @@
 #include "src/src.h"
 
 #include "variables.h"
+#include "rule_loader.h"
 
 // example value
 #define printable_ip(addr)           \
