@@ -49,6 +49,9 @@ static int packetNumInQ[ip_array_size];
 
 struct ipv4Rule *ruleList = NULL;
 int ruleNum;
+uint64_t *rule_ip = NULL;
+uint64_t *mask = NULL;
+int *rule_verdict = NULL;
 
 static int
 netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
