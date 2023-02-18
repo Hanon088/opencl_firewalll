@@ -385,21 +385,6 @@ int main()
         memcpy(&mask[i], mergeBuff, 8);
         rule_verdict[i] = tempVerdict[i];
     }
-    // initialize data copy ip and set rule_ip(uint32_t array)
-    /*for (int i = 0; i < rule_array_size; i++)
-    {
-        string_ip[3] = (unsigned int)192;
-        string_ip[2] = (unsigned int)168 + i;
-        string_ip[1] = (unsigned int)0;
-        string_ip[0] = (unsigned int)0;
-        memcpy(&rule_ip[i], string_ip, 4);
-        string_ip[3] = (unsigned int)255;
-        string_ip[2] = (unsigned int)255;
-        string_ip[1] = (unsigned int)0;
-        string_ip[0] = (unsigned int)0;
-        memcpy(&mask[i], string_ip, 4);
-        rule_verdict[i] = (i % 2 == 0);
-    }*/
 
     for (int i = 0; i < ip_array_size; i++)
     {

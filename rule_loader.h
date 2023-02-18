@@ -19,10 +19,11 @@ struct ipv4Rule
     // masks to convert the packets
     uint32_t source_ip_mask;
     uint32_t dest_ip_mask;
-
+    /*
     uint16_t source_port_mask;
     uint16_t dest_port_mask;
     uint8_t ip_protocol_mask;
+    */
 
     int verdict;
     struct ipv4Rule *next;
