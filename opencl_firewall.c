@@ -456,8 +456,8 @@ int main()
     }
 
     // clean up queues
-    pthread_cancel(&rt);
-    pthread_cancel(&vt);
+    pthread_cancel(rt);
+    pthread_cancel(vt);
     nfq_close(handler);
 
     // clean up stored packet data
