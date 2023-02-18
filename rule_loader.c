@@ -139,7 +139,6 @@ int ruleListToArr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, u
     int count = 0;
     while (1)
     {
-
         memcpy(&sAddr[count], &temp->source_ip, 4);
         memcpy(&dAddr[count], &temp->dest_ip, 4);
         memcpy(&sMask[count], &temp->source_ip_mask, 4);

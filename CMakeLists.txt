@@ -5,8 +5,9 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(.)
 
-# add when create new lib add only .c flie with dir
-add_executable(compare comparewithmask.c variables.c rule_loader.c src/PrintErr.c src/CreateOCLStructure/DeviceCL.c)
+#add when create new lib add only .c flie with dir
+
+add_executable(compare comparewithmask.c src/PrintErr.c src/CreateOCLStructure/DeviceCL.c rule_loader.c variables.c)
 
 find_package(OpenCL REQUIRED)
 
