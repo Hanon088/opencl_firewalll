@@ -48,6 +48,7 @@ static pthread_mutex_t mtx[ip_array_size];
 static int packetNumInQ[ip_array_size];
 
 struct ipv4Rule *ruleList = NULL;
+int ruleNum;
 
 static int
 netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
@@ -297,7 +298,7 @@ void *verdictThread()
         }
 
         printf("MATCH ON DEVICE\n");
-        compare_with_mask(array_ip_input, rule_ip, mask, rule_verdict, result, ip_array_size, rule_array_size);
+        compare_with_mask(array_ip_input, rule_ip, mask, rule_verdict, result, ip_array_size, ruleNum);
         for (int i = 0; i < sizeof(result) / sizeof(int); i++)
         {
             printf("%d", result[i]);
@@ -355,7 +356,6 @@ int main()
     uint16_t sPort[rule_array_size], dPort[rule_array_size];
     uint8_t protocols[rule_array_size];
     int tempVerdict[rule_array_size];
-    int ruleNum;
 
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(ruleFileName, ruleList);
