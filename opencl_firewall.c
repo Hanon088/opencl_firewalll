@@ -359,6 +359,11 @@ int main()
 
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(ruleFileName, ruleList);
+
+    rule_ip = malloc(ruleNum * 8);
+    mask = malloc(ruleNum * 8);
+    rule_verdict = malloc(ruleNum * sizeof(int));
+
     printf("Number of rules %d\n", ruleNum);
     ruleListToArr(ruleList, sAddr, sMask, dAddr, dMask, protocols, sPort, dPort, tempVerdict);
     /*for (int i = 0; i < ruleNum; i++)
@@ -444,11 +449,18 @@ int main()
     pthread_create(&rt, NULL, recvThread, NULL);
     pthread_create(&vt, NULL, verdictThread, NULL);
 
+    // need to turn this to a daemon
     while (1)
     {
         continue;
     }
 
+    // clean up queues
+    pthread_cancel(&rt);
+    pthread_cancel(&vt);
+    nfq_close(handler);
+
+    // clean up stored packet data
     for (int i = 0; i < ip_array_size; i++)
     {
         nfq_destroy_queue(queue[i]);
@@ -464,7 +476,11 @@ int main()
             callbackStructArray[i] = tempNode;
         }
     }
-    nfq_close(handler);
+
+    // free rule arrays
+    free(rule_ip);
+    free(mask);
+    free(rule_verdict);
 
     return 0;
 }
