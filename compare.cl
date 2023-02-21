@@ -1,27 +1,25 @@
 __kernel void compare(__global ulong *input_ip,
-                      __global ulong *input_mask,
-                      __global uint *input_sport,
-                      __global uint *input_dport,
-                      __global uint *input_protocol,
+                      __global ushort *input_sport,
+                      __global ushort *input_dport,
+                      __global uchar *input_protocol,
                       __global ulong *rule_ip,
                       __global ulong *rule_mask,
-                      __global uint *rule_sport,
-                      __global uint *rule_dport,
-                      __global uint *rule_protocol,
+                      __global ushort *rule_sport,
+                      __global ushort *rule_dport,
+                      __global uchar *rule_protocol,
                       __global int *result){
        /* n rule n packet */
 
        __local ulong local_input_ip;
-       __local ulong local_input_mask;
-       __local uint local_input_sport;
-       __local uint local_input_dport;
-       __local uint local_input_protocol;
+       __local ushort local_input_sport;
+       __local ushort local_input_dport;
+       __local uchar local_input_protocol;
 
        __local ulong local_rule_ip;
        __local ulong local_rule_mask;
-       __local uint local_rule_sport;
-       __local uint local_rule_dport;
-       __local uint local_rule_protocol;
+       __local ushort local_rule_sport;
+       __local ushort local_rule_dport;
+       __local uchar local_rule_protocol;
 
        __local int local_output;
 
@@ -29,7 +27,6 @@ __kernel void compare(__global ulong *input_ip,
        int input_index  = get_global_id(1);
 
        local_input_ip = input_ip[input_index];
-       local_input_mask = input_mask[input_index];
        local_input_sport = input_sport[input_index];
        local_input_dport = input_dport[input_index];
        local_input_protocol = input_protocol[input_index];
@@ -48,7 +45,7 @@ __kernel void compare(__global ulong *input_ip,
        if(local_rule_sport == 0){local_input_sport = 0;}
        if(local_rule_dport == 0){local_input_dport = 0;}
 
-       local_output = ((local_input_ip & local_rule_mask) == local_rule_ip) & (local_rule_protocol == local_input_protocol)&(local_rule_sport == local_input_sport)&(local_rule_dport == local_input_dport);
+       local_output = ((local_input_ip & local_rule_mask) == local_rule_ip) & (local_rule_protocol == local_input_protocol) & (local_rule_sport == local_input_sport) & (local_rule_dport == local_input_dport);
        result[packet_index] = local_output;
 
 }
