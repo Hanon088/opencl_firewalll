@@ -279,12 +279,16 @@ void *verdictThread()
             protocol = callbackStructArray[i]->ip_protocol;
             sPort = callbackStructArray[i]->source_port;
             dPort = callbackStructArray[i]->dest_port;
+            protocol = callbackStructArray[i]->ip_protocol;
             // printf("Q: %p NFAD %p\n", callbackStructArray[i]->queue, callbackStructArray[i]->nfad);
             printf("QUEUE %d PACKET ID: %u\n", i, callbackStructArray[i]->packet_id);
             printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), protocol, sPort, dPort);
 
             // array_ip_input[i] = source_ip;
             memcpy(&array_ip_input[i], ip_addr, 8);
+            protocol_input[i] = protocol;
+            s_port_input[i] = sPort;
+            d_port_input[i] = dPort;
         }
 
         // check rule_ip ip on cpu
