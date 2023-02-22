@@ -9,7 +9,10 @@
 
 extern uint64_t *rule_ip;
 extern uint64_t *mask;
+extern uint8_t *rule_protocol;
 extern int *rule_verdict;
+extern uint16_t *rule_s_port;
+extern uint16_t *rule_d_port;
 extern int result[ip_array_size];
 
 int compare_with_mask(uint64_t array_ip_input[], uint64_t rule_ip[], uint64_t mask[], int verdict[], int result[], int ip_arr_size, int rule_arr_size);

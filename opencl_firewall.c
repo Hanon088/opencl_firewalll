@@ -51,6 +51,9 @@ struct ipv4Rule *ruleList = NULL;
 int ruleNum;
 uint64_t *rule_ip = NULL;
 uint64_t *mask = NULL;
+uint8_t *rule_protocol = NULL;
+uint16_t *rule_s_port = NULL;
+uint16_t *rule_d_port = NULL;
 int *rule_verdict = NULL;
 
 static int
@@ -357,32 +360,34 @@ int main()
     unsigned char string_ip[4];
     uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2];
     uint16_t *sPort, *dPort;
-    uint8_t *protocols;
-    int *tempVerdict;
 
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(ruleFileName, ruleList);
 
     rule_ip = malloc(ruleNum * 8);
     mask = malloc(ruleNum * 8);
+    rule_protocol = malloc(ruleNum);
+    rule_s_port = malloc(ruleNum * 2);
+    rule_d_port = malloc(ruleNum * 2);
     rule_verdict = malloc(ruleNum * sizeof(int));
 
+    // local buffers used to load rules
     sAddr = malloc(ruleNum * 4);
     dAddr = malloc(ruleNum * 4);
     sMask = malloc(ruleNum * 4);
     dMask = malloc(ruleNum * 4);
     sPort = malloc(ruleNum * 2);
     dPort = malloc(ruleNum * 2);
-    protocols = malloc(ruleNum);
 
     printf("Number of rules %d\n", ruleNum);
-    ruleListToArr(ruleList, sAddr, sMask, dAddr, dMask, protocols, sPort, dPort, tempVerdict);
+    ruleListToArr(ruleList, sAddr, sMask, dAddr, dMask, rule_protocol, sPort, dPort, rule_verdict);
     /*for (int i = 0; i < ruleNum; i++)
     {
         printf("SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u Verdict: %d\n", printable_ip(sAddr[i]), printable_ip(sMask[i]), printable_ip(dAddr[i]), printable_ip(dMask[i]), tempVerdict[i]);
     }*/
     freeRules(ruleList);
 
+    /*loading procedure may be redundant but easier to modify if OpenCL arg size change, such as merging source and dest ip*/
     for (int i = 0; i < rule_array_size; i++)
     {
         mergeBuff[0] = sAddr[i];
@@ -391,8 +396,9 @@ int main()
         mergeBuff[0] = sMask[i];
         mergeBuff[1] = dMask[i];
         memcpy(&mask[i], mergeBuff, 8);
-        rule_verdict[i] = tempVerdict[i];
     }
+    memcpy(rule_s_port, sPort, ruleNum * 2);
+    memcpy(rule_d_port, dPort, ruleNum * 2);
 
     // free  local buffers
     free(sAddr);
@@ -401,7 +407,6 @@ int main()
     free(dMask);
     free(sPort);
     free(dPort);
-    free(protocols);
 
     for (int i = 0; i < ip_array_size; i++)
     {
@@ -486,5 +491,8 @@ int main()
     free(rule_ip);
     free(mask);
     free(rule_verdict);
+    free(rule_protocol);
+    free(rule_s_port);
+    free(rule_d_port);
     return 0;
 }
