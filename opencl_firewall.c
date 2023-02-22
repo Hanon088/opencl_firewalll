@@ -355,10 +355,10 @@ int main()
     int queueNum[ip_array_size];
     struct callbackStruct *tempNode;
     unsigned char string_ip[4];
-    uint32_t sAddr[rule_array_size], dAddr[rule_array_size], sMask[rule_array_size], dMask[rule_array_size], mergeBuff[2];
-    uint16_t sPort[rule_array_size], dPort[rule_array_size];
-    uint8_t protocols[rule_array_size];
-    int tempVerdict[rule_array_size];
+    uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2];
+    uint16_t *sPort, *dPort;
+    uint8_t *protocols;
+    int *tempVerdict;
 
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(ruleFileName, ruleList);
@@ -366,6 +366,14 @@ int main()
     rule_ip = malloc(ruleNum * 8);
     mask = malloc(ruleNum * 8);
     rule_verdict = malloc(ruleNum * sizeof(int));
+
+    sAddr = malloc(ruleNum * 4);
+    dAddr = malloc(ruleNum * 4);
+    sMask = malloc(ruleNum * 4);
+    dMask = malloc(ruleNum * 4);
+    sPort = malloc(ruleNum * 2);
+    dPort = malloc(ruleNum * 2);
+    protocols = malloc(ruleNum);
 
     printf("Number of rules %d\n", ruleNum);
     ruleListToArr(ruleList, sAddr, sMask, dAddr, dMask, protocols, sPort, dPort, tempVerdict);
@@ -385,6 +393,15 @@ int main()
         memcpy(&mask[i], mergeBuff, 8);
         rule_verdict[i] = tempVerdict[i];
     }
+
+    // free  local buffers
+    free(sAddr);
+    free(dAddr);
+    free(sMask);
+    free(dMask);
+    free(sPort);
+    free(dPort);
+    free(protocols);
 
     for (int i = 0; i < ip_array_size; i++)
     {
@@ -469,6 +486,5 @@ int main()
     free(rule_ip);
     free(mask);
     free(rule_verdict);
-
     return 0;
 }
