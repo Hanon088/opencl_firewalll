@@ -236,6 +236,8 @@ void *verdictThread()
     uint8_t protocol;
     struct callbackStruct *tempNode;
     uint64_t array_ip_input[ip_array_size];
+    uint8_t protocol_input[ip_array_size];
+    uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
 
     while (1)
     {
@@ -304,7 +306,7 @@ void *verdictThread()
         }
 
         printf("MATCH ON DEVICE\n");
-        compare_with_mask(array_ip_input, rule_ip, mask, rule_verdict, result, ip_array_size, ruleNum);
+        compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
         for (int i = 0; i < sizeof(result) / sizeof(int); i++)
         {
             printf("%d", result[i]);
