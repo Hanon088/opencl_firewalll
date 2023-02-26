@@ -45,7 +45,7 @@ struct callbackStruct
 struct callbackStruct *packet_data[ip_array_size];
 struct callbackStruct *packet_data_tail[ip_array_size];
 static pthread_mutex_t packet_data_mtx[ip_array_size];
-static int packetNumInQ[ip_array_size];
+static int packet_data_count[ip_array_size];
 
 struct ipv4Rule *ruleList = NULL;
 int ruleNum;
@@ -171,7 +171,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         }
         packet_data[queueNum] = localBuff;
         packet_data_tail[queueNum] = localBuff;
-        packetNumInQ[queueNum]++;
+        packet_data_count[queueNum]++;
         err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
@@ -189,7 +189,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         }
         packet_data_tail[queueNum]->next = localBuff;
         packet_data_tail[queueNum] = packet_data_tail[queueNum]->next;
-        packetNumInQ[queueNum]++;
+        packet_data_count[queueNum]++;
         err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
@@ -215,7 +215,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         }
         lastBuff->next = localBuff;
         packet_data_tail[queueNum] = localBuff;
-        packetNumInQ[queueNum]++;
+        packet_data_count[queueNum]++;
         err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
@@ -330,7 +330,7 @@ void *verdictThread()
                 tempNode->queue = NULL;
                 free(tempNode->nfad);
                 free(tempNode);
-                packetNumInQ[i]--;
+                packet_data_count[i]--;
             }
             err = pthread_mutex_unlock(&packet_data_mtx[i]);
             if (err != 0)
@@ -419,7 +419,7 @@ int main()
         packet_data[i] = NULL;
         packet_data_tail[i] = NULL;
         packet_data_mtx[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-        packetNumInQ[i] = 0;
+        packet_data_count[i] = 0;
     }
 
     handler = nfq_open();
