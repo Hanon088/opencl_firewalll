@@ -298,16 +298,16 @@ void *verdictThread()
         // check rule_ip ip on cpu, can be removed later
         printf("MATCH ON CPU\n");
         bool test;
-        for (int i = 0; i < rule_array_size; i++)
+        for (int i = 0; i < ruleNum; i++)
         {
             printf("%s %d: SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u | verdict : %d\n", "Rule no.", i, printable_ip(rule_ip[i]), printable_ip(rule_mask[i]), printable_ip(rule_ip[i] + 4), printable_ip(rule_mask[i] + 4), rule_verdict[i]);
         }
-        for (int i = 0; i < ip_array_size * rule_array_size; i++)
+        for (int i = 0; i < ip_array_size * ruleNum; i++)
         {
-            test = rule_ip[i % rule_array_size] == (array_ip_input[i / rule_array_size] & rule_mask[i % rule_array_size]);
+            test = rule_ip[i % ruleNum] == (array_ip_input[i / ruleNum] & rule_mask[i % ruleNum]);
             printf("%d", test);
-            //        printf(" | %u.%u.%u.%u ", printable_ip(array_ip_input[i/rule_array_size]));
-            if (i % rule_array_size == rule_array_size - 1)
+            //        printf(" | %u.%u.%u.%u ", printable_ip(array_ip_input[i/ruleNum]));
+            if (i % ruleNum == ruleNum - 1)
             {
                 printf("\n");
             }
@@ -361,18 +361,11 @@ void *recvThread()
     return 0;
 }
 
-// only functions to load the programme
-int main()
+int prep_rules()
 {
-    struct nfq_q_handle *queue[ip_array_size];
-    pthread_t vt, rt;
-    int queueNum[ip_array_size];
-    struct callbackStruct *tempNode;
-    unsigned char string_ip[4];
     uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2] __attribute__((aligned));
     uint16_t *sPort, *dPort;
 
-    // function calls dealing with rules will need to be separated from main to allow rule editing on runtime later
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(rule_file, ruleList);
 
@@ -396,7 +389,7 @@ int main()
     free_rule_list(ruleList);
 
     /*loading procedure may be redundant but easier to modify if OpenCL arg size change, such as merging source and dest ip*/
-    for (int i = 0; i < rule_array_size; i++)
+    for (int i = 0; i < ruleNum; i++)
     {
         mergeBuff[0] = sAddr[i];
         mergeBuff[1] = dAddr[i];
@@ -415,6 +408,18 @@ int main()
     free(dMask);
     free(sPort);
     free(dPort);
+    return 0;
+}
+
+// only functions to load the programm
+int main()
+{
+    struct nfq_q_handle *queue[ip_array_size];
+    pthread_t vt, rt;
+    int queueNum[ip_array_size];
+    struct callbackStruct *tempNode;
+
+    prep_rules();
 
     for (int i = 0; i < ip_array_size; i++)
     {
