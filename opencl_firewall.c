@@ -18,16 +18,12 @@
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 #include <libnetfilter_queue/libnetfilter_queue_udp.h>
 
+// custom headers
 #include "variables.h"
 #include "compare.h"
 #include "rule_loader.h"
 
-long int packet_count = 0;
-long int batch_num = 0;
-int netf_fd;
-char buf[0xffff] __attribute__((aligned));
-struct nfq_handle *handler;
-
+// struct to store packet data from callback
 struct callbackStruct
 {
     struct nfq_q_handle *queue;
@@ -42,11 +38,20 @@ struct callbackStruct
     uint16_t dest_port;
 };
 
+// file global for libnetfilter_queue
+long int packet_count = 0;
+long int batch_num = 0;
+int netf_fd;
+char buf[0xffff] __attribute__((aligned));
+struct nfq_handle *handler;
+
+// file global for storing packet
 struct callbackStruct *packet_data[ip_array_size];
 struct callbackStruct *packet_data_tail[ip_array_size];
 static pthread_mutex_t packet_data_mtx[ip_array_size];
 static int packet_data_count[ip_array_size];
 
+// file global for OpenCL kernel
 struct ipv4Rule *ruleList = NULL;
 int ruleNum;
 uint64_t *rule_ip = NULL;
@@ -55,7 +60,9 @@ uint8_t *rule_protocol = NULL;
 uint16_t *rule_s_port = NULL;
 uint16_t *rule_d_port = NULL;
 int *rule_verdict = NULL;
+int result[ip_array_size];
 
+// callback function for libnetfilter_queue
 static int
 netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
@@ -111,9 +118,6 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
         return 0;
     }
-
-    /*source_ip = ntohl(ip->saddr);
-    dest_ip = ntohl(ip->daddr);*/
 
     localBuff->source_ip = ntohl(ip->saddr);
     localBuff->dest_ip = ntohl(ip->daddr);
@@ -199,7 +203,6 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
     }
     else
     {
-        // could this be causing trouble?
         err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
@@ -227,10 +230,10 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
     return 0;
 }
 
+// takes data stored by callback and calls OpenCL kernel
 void *verdictThread()
 {
     int err;
-    // uint32_t source_ip, dest_ip;
     uint32_t ip_addr[2] __attribute__((aligned));
     uint16_t sPort, dPort;
     uint8_t protocol;
@@ -239,6 +242,7 @@ void *verdictThread()
     uint8_t protocol_input[ip_array_size];
     uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
 
+    // waits for packets to arrive in ALL queues
     while (1)
     {
         for (int i = 0; i < ip_array_size; i++)
@@ -259,6 +263,7 @@ void *verdictThread()
     {
         for (int i = 0; i < ip_array_size; i++)
         {
+            // makes sure each queues has at least 2 packets, perhaps can be optimised?
             if (!(packet_data[i]))
             {
                 goto cnt;
@@ -274,24 +279,23 @@ void *verdictThread()
 
         for (int i = 0; i < ip_array_size; i++)
         {
+            // source and dest ip and masks are concatenated to 64 bits
             ip_addr[0] = packet_data[i]->source_ip;
             ip_addr[1] = packet_data[i]->dest_ip;
             protocol = packet_data[i]->ip_protocol;
             sPort = packet_data[i]->source_port;
             dPort = packet_data[i]->dest_port;
             protocol = packet_data[i]->ip_protocol;
-            // printf("Q: %p NFAD %p\n", callbackStructArray[i]->queue, callbackStructArray[i]->nfad);
             printf("QUEUE %d PACKET ID: %u\n", i, packet_data[i]->packet_id);
             printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), protocol, sPort, dPort);
 
-            // array_ip_input[i] = source_ip;
             memcpy(&array_ip_input[i], ip_addr, 8);
             protocol_input[i] = protocol;
             s_port_input[i] = sPort;
             d_port_input[i] = dPort;
         }
 
-        // check rule_ip ip on cpu
+        // check rule_ip ip on cpu, can be removed later
         printf("MATCH ON CPU\n");
         bool test;
         for (int i = 0; i < rule_array_size; i++)
@@ -342,6 +346,7 @@ void *verdictThread()
     }
 }
 
+// connect to libnetfilter_queue via recv, could this be a bottleneck?
 void *recvThread()
 {
     int rcv_len;
@@ -351,12 +356,12 @@ void *recvThread()
         rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
         if (rcv_len < 0)
             continue;
-        // printf("pkt received %ld\n", ++packet_count);
         nfq_handle_packet(handler, buf, rcv_len);
     }
     return 0;
 }
 
+// only functions to load the programme
 int main()
 {
     struct nfq_q_handle *queue[ip_array_size];
@@ -367,8 +372,9 @@ int main()
     uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2] __attribute__((aligned));
     uint16_t *sPort, *dPort;
 
+    // function calls dealing with rules will need to be separated from main to allow rule editing on runtime later
     ruleList = malloc(sizeof(struct ipv4Rule));
-    ruleNum = load_rules(ruleFileName, ruleList);
+    ruleNum = load_rules(rule_file, ruleList);
 
     rule_ip = malloc(ruleNum * 8);
     rule_mask = malloc(ruleNum * 8);
@@ -386,12 +392,8 @@ int main()
     dPort = malloc(ruleNum * 2);
 
     printf("Number of rules %d\n", ruleNum);
-    ruleListToArr(ruleList, sAddr, sMask, dAddr, dMask, rule_protocol, sPort, dPort, rule_verdict);
-    /*for (int i = 0; i < ruleNum; i++)
-    {
-        printf("SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u Verdict: %d\n", printable_ip(sAddr[i]), printable_ip(sMask[i]), printable_ip(dAddr[i]), printable_ip(dMask[i]), tempVerdict[i]);
-    }*/
-    freeRules(ruleList);
+    rule_list_to_arr(ruleList, sAddr, sMask, dAddr, dMask, rule_protocol, sPort, dPort, rule_verdict);
+    free_rule_list(ruleList);
 
     /*loading procedure may be redundant but easier to modify if OpenCL arg size change, such as merging source and dest ip*/
     for (int i = 0; i < rule_array_size; i++)

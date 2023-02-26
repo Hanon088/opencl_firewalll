@@ -7,6 +7,7 @@
         ((unsigned char *)&addr)[1], \
         ((unsigned char *)&addr)[0]
 
+/*
 extern uint64_t *rule_ip;
 extern uint64_t *rule_mask;
 extern uint8_t *rule_protocol;
@@ -14,6 +15,7 @@ extern uint16_t *rule_s_port;
 extern uint16_t *rule_d_port;
 extern int *rule_verdict;
 extern int result[ip_array_size];
+*/
 
 int compare(uint64_t input_ip[],
             uint16_t input_sport[],

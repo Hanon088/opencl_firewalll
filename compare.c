@@ -9,11 +9,6 @@
 #include "variables.h"
 #include "compare.h"
 
-/*uint64_t rule_ip[rule_array_size];
-uint64_t mask[rule_array_size];
-int rule_verdict[rule_array_size];*/
-int result[ip_array_size];
-
 int compare(uint64_t input_ip[],
             uint16_t input_sport[],
             uint16_t input_dport[],

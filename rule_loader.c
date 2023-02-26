@@ -7,10 +7,6 @@
 #include "variables.h"
 #include "rule_loader.h"
 
-// struct ipv4Rule *ruleList = NULL;
-//  char *ruleFileName = "C:\\Users\\Jack\\Documents\\Year 4 Project\\opencl_firewalll\\rules.txt";
-//   char *ruleFileName = "rules.txt";
-
 int parseIntoIPv4(char *ipStr, uint32_t *binIP)
 {
     int bufferInt[4];
@@ -116,7 +112,7 @@ int load_rules(const char *filename, struct ipv4Rule *ruleList)
     return ruleNum;
 }
 
-int freeRules(struct ipv4Rule *ruleList)
+int free_rule_list(struct ipv4Rule *ruleList)
 {
     struct ipv4Rule *temp = ruleList;
 
@@ -129,7 +125,7 @@ int freeRules(struct ipv4Rule *ruleList)
     return 0;
 }
 
-int ruleListToArr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t *dMask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr)
+int rule_list_to_arr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t *dMask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr)
 {
     struct ipv4Rule *temp = ruleList;
     int count = 0;
