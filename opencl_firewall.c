@@ -50,7 +50,7 @@ static int packetNumInQ[ip_array_size];
 struct ipv4Rule *ruleList = NULL;
 int ruleNum;
 uint64_t *rule_ip = NULL;
-uint64_t *mask = NULL;
+uint64_t *rule_mask = NULL;
 uint8_t *rule_protocol = NULL;
 uint16_t *rule_s_port = NULL;
 uint16_t *rule_d_port = NULL;
@@ -296,11 +296,11 @@ void *verdictThread()
         bool test;
         for (int i = 0; i < rule_array_size; i++)
         {
-            printf("%s %d: SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u | verdict : %d\n", "Rule no.", i, printable_ip(rule_ip[i]), printable_ip(mask[i]), printable_ip(rule_ip[i] + 4), printable_ip(mask[i] + 4), rule_verdict[i]);
+            printf("%s %d: SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u | verdict : %d\n", "Rule no.", i, printable_ip(rule_ip[i]), printable_ip(rule_mask[i]), printable_ip(rule_ip[i] + 4), printable_ip(rule_mask[i] + 4), rule_verdict[i]);
         }
         for (int i = 0; i < ip_array_size * rule_array_size; i++)
         {
-            test = rule_ip[i % rule_array_size] == (array_ip_input[i / rule_array_size] & mask[i % rule_array_size]);
+            test = rule_ip[i % rule_array_size] == (array_ip_input[i / rule_array_size] & rule_mask[i % rule_array_size]);
             printf("%d", test);
             //        printf(" | %u.%u.%u.%u ", printable_ip(array_ip_input[i/rule_array_size]));
             if (i % rule_array_size == rule_array_size - 1)
@@ -310,7 +310,7 @@ void *verdictThread()
         }
 
         printf("MATCH ON DEVICE\n");
-        compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
+        compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
         for (int i = 0; i < sizeof(result) / sizeof(int); i++)
         {
             printf("%d", result[i]);
@@ -371,7 +371,7 @@ int main()
     ruleNum = load_rules(ruleFileName, ruleList);
 
     rule_ip = malloc(ruleNum * 8);
-    mask = malloc(ruleNum * 8);
+    rule_mask = malloc(ruleNum * 8);
     rule_protocol = malloc(ruleNum);
     rule_s_port = malloc(ruleNum * 2);
     rule_d_port = malloc(ruleNum * 2);
@@ -401,7 +401,7 @@ int main()
         memcpy(&rule_ip[i], mergeBuff, 8);
         mergeBuff[0] = sMask[i];
         mergeBuff[1] = dMask[i];
-        memcpy(&mask[i], mergeBuff, 8);
+        memcpy(&rule_mask[i], mergeBuff, 8);
     }
     memcpy(rule_s_port, sPort, ruleNum * 2);
     memcpy(rule_d_port, dPort, ruleNum * 2);
@@ -495,7 +495,7 @@ int main()
 
     // free rule arrays
     free(rule_ip);
-    free(mask);
+    free(rule_mask);
     free(rule_verdict);
     free(rule_protocol);
     free(rule_s_port);
