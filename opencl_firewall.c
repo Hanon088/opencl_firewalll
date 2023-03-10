@@ -481,12 +481,17 @@ int main()
     // clean up queues
     pthread_cancel(rt);
     pthread_cancel(vt);
+
+    for (int i = 0; i < ip_array_size; i++)
+    {
+        nfq_destroy_queue(queue[i]);
+    }
+
     nfq_close(handler);
 
     // clean up stored packet data
     for (int i = 0; i < ip_array_size; i++)
     {
-        nfq_destroy_queue(queue[i]);
         tempNode = packet_data[i];
         if (!tempNode)
         {
