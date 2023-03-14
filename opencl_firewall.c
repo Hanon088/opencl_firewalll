@@ -336,7 +336,7 @@ void *verdictThread()
             //        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
             if (test == 1)
             {
-                verdict_buffer = verdict[i % ruleNum];
+                verdict_buffer = rule_verdict[i % ruleNum];
                 i += ruleNum - i % ruleNum;
                 printf("%d", verdict_buffer);
                 verdict_buffer = 0;
