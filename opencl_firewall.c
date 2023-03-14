@@ -296,7 +296,7 @@ void *verdictThread()
         }
 
         // check rule_ip ip on cpu, can be removed later
-        printf("MATCH ON CPU\n");
+        /*printf("MATCH ON CPU\n");
         bool test;
         for (int i = 0; i < ruleNum; i++)
         {
@@ -311,7 +311,43 @@ void *verdictThread()
             {
                 printf("\n");
             }
+        }*/
+        int test, protocol_result, sport_result, dport_result;
+        int verdict_buffer = 0;
+        for (int i = 0; i < ip_array_size * ruleNum; i++)
+        {
+            if (protocols[i % ruleNum] == 0)
+            {
+                input_protocol[i / ruleNum] = 0;
+            }
+            if (sPort[i % ruleNum] == 0)
+            {
+                input_sport[i / ruleNum] = 0;
+            }
+            if (dPort[i % ruleNum] == 0)
+            {
+                input_dport[i / ruleNum] = 0;
+            }
+            test = rule_ip[i % ruleNum] == (input_ip[i / ruleNum] & rule_mask[i % ruleNum]);
+            protocol_result = (protocols[i % ruleNum] == input_protocol[i / ruleNum]);
+            sport_result = (sPort[i % ruleNum] == input_sport[i / ruleNum]);
+            dport_result = (dPort[i % ruleNum] == input_dport[i / ruleNum]);
+            //        printf("%d|", i / ruleNum);
+            //        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
+            if (test == 1)
+            {
+                verdict_buffer = verdict[i % ruleNum];
+                i += ruleNum - i % ruleNum;
+                printf("%d", verdict_buffer);
+                verdict_buffer = 0;
+            }
+            if (i % ruleNum == ruleNum - 1)
+            {
+                printf("%d", verdict_buffer);
+                verdict_buffer = 0;
+            }
         }
+        printf("\n");
 
         printf("MATCH ON DEVICE\n");
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
