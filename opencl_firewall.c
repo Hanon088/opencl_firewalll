@@ -316,24 +316,24 @@ void *verdictThread()
         int verdict_buffer = 0;
         for (int i = 0; i < ip_array_size * ruleNum; i++)
         {
-            if (protocols[i % ruleNum] == 0)
+            if (rule_protocol[i % ruleNum] == 0)
             {
-                input_protocol[i / ruleNum] = 0;
+                protocol_input[i / ruleNum] = 0;
             }
-            if (sPort[i % ruleNum] == 0)
+            if (rule_s_port[i % ruleNum] == 0)
             {
-                input_sport[i / ruleNum] = 0;
+                s_port_input[i / ruleNum] = 0;
             }
-            if (dPort[i % ruleNum] == 0)
+            if (rule_d_port[i % ruleNum] == 0)
             {
-                input_dport[i / ruleNum] = 0;
+                d_port_input[i / ruleNum] = 0;
             }
-            test = rule_ip[i % ruleNum] == (input_ip[i / ruleNum] & rule_mask[i % ruleNum]);
-            protocol_result = (protocols[i % ruleNum] == input_protocol[i / ruleNum]);
-            sport_result = (sPort[i % ruleNum] == input_sport[i / ruleNum]);
-            dport_result = (dPort[i % ruleNum] == input_dport[i / ruleNum]);
+            test = rule_ip[i % ruleNum] == (array_ip_input[i / ruleNum] & rule_mask[i % ruleNum]);
+            protocol_result = (rule_protocol[i % ruleNum] == protocol_input[i / ruleNum]);
+            sport_result = (rule_s_port[i % ruleNum] == s_port_input[i / ruleNum]);
+            dport_result = (rule_d_port[i % ruleNum] == d_port_input[i / ruleNum]);
             //        printf("%d|", i / ruleNum);
-            //        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
+            //        printf("%u.%u.%u.%u\n", printable_ip(array_ip_input[i/ruleNum]));
             if (test == 1)
             {
                 verdict_buffer = rule_verdict[i % ruleNum];
