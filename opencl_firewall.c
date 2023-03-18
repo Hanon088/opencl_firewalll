@@ -315,11 +315,6 @@ void *verdictThread()
         int test, protocol_result, sport_result, dport_result;
         int verdict_buffer = 0;
 
-        for (int i = 0; i < ruleNum; i++)
-        {
-            printf("RULE s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(((uint32_t *)(rule_ip[i]))[0]), printable_ip(((uint32_t *)(rule_ip[i]))[1]), protocol, sPort, dPort);
-        }
-
         for (int i = 0; i < ip_array_size * ruleNum; i++)
         {
             if (rule_protocol[i % ruleNum] == 0)
@@ -431,8 +426,10 @@ int prep_rules()
     free_rule_list(ruleList);
 
     /*loading procedure may be redundant but easier to modify if OpenCL arg size change, such as merging source and dest ip*/
+
     for (int i = 0; i < ruleNum; i++)
     {
+        printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", i, printable_ip(sAddr), printable_ip(dAddr), rule_protocol[i], sPort, dPort);
         mergeBuff[0] = sAddr[i];
         mergeBuff[1] = dAddr[i];
         memcpy(&rule_ip[i], mergeBuff, 8);
