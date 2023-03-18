@@ -429,7 +429,7 @@ int prep_rules()
 
     for (int i = 0; i < ruleNum; i++)
     {
-        printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip(sAddr), printable_ip(dAddr), rule_protocol[i], sPort, dPort);
+        printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip(sAddr[i]), printable_ip(dAddr[i]), rule_protocol[i], sPort[i], dPort[i]);
         mergeBuff[0] = sAddr[i];
         mergeBuff[1] = dAddr[i];
         memcpy(&rule_ip[i], mergeBuff, 8);
