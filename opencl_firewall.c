@@ -317,7 +317,7 @@ void *verdictThread()
 
         for (int i = 0; i < ruleNum; i++)
         {
-            printf("RULE s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip((uint32_t *)(rule_ip[i])[0]), printable_ip((uint32_t *)(rule_ip[i])[1]), protocol, sPort, dPort);
+            printf("RULE s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(((uint32_t *)(rule_ip[i]))[0]), printable_ip(((uint32_t *)(rule_ip[i]))[1]), protocol, sPort, dPort);
         }
 
         for (int i = 0; i < ip_array_size * ruleNum; i++)
