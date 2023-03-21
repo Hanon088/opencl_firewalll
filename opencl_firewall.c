@@ -49,7 +49,7 @@ struct nfq_handle *handler;
 struct callbackStruct *packet_data[ip_array_size];
 struct callbackStruct *packet_data_tail[ip_array_size];
 static pthread_mutex_t packet_data_mtx[ip_array_size];
-static int packet_data_count[ip_array_size];
+static volatile int packet_data_count[ip_array_size];
 
 // file global for OpenCL kernel
 struct ipv4Rule *ruleList = NULL;
@@ -247,7 +247,7 @@ void *verdictThread()
     {
         for (int i = 0; i < ip_array_size; i++)
         {
-            if (!(packet_data[i]))
+            if (packet_data_count[i] < 2)
             {
                 goto cnt;
             }
@@ -264,12 +264,7 @@ void *verdictThread()
         for (int i = 0; i < ip_array_size; i++)
         {
             // makes sure each queues has at least 2 packets, perhaps can be optimised?
-            if (!(packet_data[i]))
-            {
-                goto cnt;
-            }
-
-            if (!(packet_data[i]->next))
+            if (packet_data_count[i] < 2)
             {
                 goto cnt;
             }
