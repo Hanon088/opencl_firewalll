@@ -296,22 +296,6 @@ void *verdictThread()
         }
 
         // check rule_ip ip on cpu, can be removed later
-        /*printf("MATCH ON CPU\n");
-        bool test;
-        for (int i = 0; i < ruleNum; i++)
-        {
-            printf("%s %d: SOURCE : %u.%u.%u.%u Mask : %u.%u.%u.%u DEST : %u.%u.%u.%u Mask : %u.%u.%u.%u | verdict : %d\n", "Rule no.", i, printable_ip(rule_ip[i]), printable_ip(rule_mask[i]), printable_ip(rule_ip[i] + 4), printable_ip(rule_mask[i] + 4), rule_verdict[i]);
-        }
-        for (int i = 0; i < ip_array_size * ruleNum; i++)
-        {
-            test = rule_ip[i % ruleNum] == (array_ip_input[i / ruleNum] & rule_mask[i % ruleNum]);
-            printf("%d", test);
-            //        printf(" | %u.%u.%u.%u ", printable_ip(array_ip_input[i/ruleNum]));
-            if (i % ruleNum == ruleNum - 1)
-            {
-                printf("\n");
-            }
-        }*/
         int test, protocol_result, sport_result, dport_result;
         int verdict_buffer = 0;
 
