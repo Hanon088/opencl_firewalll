@@ -21,7 +21,11 @@
 
 // main_program
 
-int compare(uint64_t input_ip[],
+
+
+
+
+int compare_old(uint64_t input_ip[],
             uint16_t input_sport[],
             uint16_t input_dport[],
             uint8_t input_protocol[],
@@ -59,19 +63,12 @@ int compare(uint64_t input_ip[],
             result_buffer,
             rule_size_buffer;
 
-    // create cl_device
     deviceId = create_device_cl();
-
-    long mem_size;
-    err = clGetDeviceInfo(deviceId, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(long), &mem_size, NULL);
-    printf("GLOBAL_MEM_SIZE : %ld MB \n", mem_size / 1000000);
-
-    // crate context
     context = clCreateContext(NULL, 1, &deviceId, NULL, NULL, &err);
     print_err(err);
 
     // build program;
-    program = create_program_cl(context, deviceId, source);
+    program = create_program_cl(context, deviceId,source);
 
     // define 10 workgroup 1 local workgroup
     size_t global_size[] = {rule_arr_size, ip_arr_size};
@@ -275,9 +272,9 @@ int main()
     int test, protocol_result, sport_result, dport_result;
     for (int i = 0; i < rule_array_size; i++)
     {
-        printf("%s %d: %u.%u.%u.%u rule_mask : %u.%u.%u.%u : verdict : %d\n", "rule_ip", i, printable_ip(rule_ip[i]), printable_ip(rule_mask[i]), verdict[i]);
+        printf("%s %d: %u.%u.%u.%u rule_mask : %u.%u.%u.%u : sport: %u : dport: %u : protocol : %u : verdict : %d\n", "rule_ip", i, printable_ip(rule_ip[i]), printable_ip(rule_mask[i]), (unsigned int)sPort[i], (unsigned int)dPort[i] , (unsigned int)protocols[i],verdict[i]);
     }
-    int verdict_buffer = 0;
+    int int_verdict_buffer = 0;
     for (int i = 0; i < ip_array_size * rule_array_size; i++)
     {
         if(protocols[i % rule_array_size] == 0){input_protocol[i / rule_array_size] = 0;}
@@ -287,30 +284,33 @@ int main()
         protocol_result = (protocols[i % rule_array_size] == input_protocol[i / rule_array_size]);
         sport_result = (sPort[i % rule_array_size] == input_sport[i / rule_array_size]);
         dport_result = (dPort[i % rule_array_size] == input_dport[i / rule_array_size]);
+        test = protocol_result & sport_result & dport_result & test;
 //        printf("%d|", i / rule_array_size);
-//        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/rule_array_size]));
+//        printf("%u.%u.%u.%u | %d | %u.%u.%u.%u | %d | %d |\n", printable_ip(input_ip[i/rule_array_size]), test, printable_ip(rule_ip[i % rule_array_size]), i % rule_array_size, i);
         if (test == 1)
         {
-            verdict_buffer = verdict[i % rule_array_size];
+            int_verdict_buffer = verdict[i % rule_array_size];
             i += rule_array_size - i % rule_array_size;
-            printf("%d", verdict_buffer);
-            verdict_buffer = 0;
+            i--;
+            printf("%d", int_verdict_buffer);
+            int_verdict_buffer = 0;
         }
-        if (i % rule_array_size == rule_array_size - 1)
+        else if (i % rule_array_size == (rule_array_size - 1))
         {
-            printf("%d", verdict_buffer);
+            printf("%d", int_verdict_buffer);
             verdict_buffer = 0;
         }
+
     }
     printf("\n");
-    for (int j = 0; j < 1; j++)
+    for (int j = 0; j < 10; j++)
     {
-        compare(input_ip, input_sport, input_dport, input_protocol, rule_ip,rule_mask, sPort, dPort, protocols, tempVerdict, result, ip_array_size, rule_array_size);
+        compare_old(input_ip, input_sport, input_dport, input_protocol, rule_ip,rule_mask, sPort, dPort, protocols, tempVerdict, result, ip_array_size, rule_array_size);
         for (int i = 0; i < sizeof(result) / sizeof(int); i++)
         {
             printf("%d", result[i]);
         }
-        printf("\n");
+        printf(" | %d\n", j);
     }
     freeRules(ruleList);
 }
