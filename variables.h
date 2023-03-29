@@ -1,7 +1,6 @@
 #define ip_array_size 10
-
-static int queue_num;
-static int queue_multipler;
+#define queue_num 5
+#define queue_multipler 2
 
 extern const char *source;
 extern const char *func_compare;

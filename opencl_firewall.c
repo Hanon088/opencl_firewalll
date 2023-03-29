@@ -36,6 +36,8 @@ struct callbackStruct
     uint8_t ip_protocol;
     uint16_t source_port;
     uint16_t dest_port;
+    /*a packet buffer may needs to be implemented
+    if it turns out libnetfilter_queue doesn't hold the packet*/
 };
 
 // file global for libnetfilter_queue
@@ -46,10 +48,10 @@ char buf[0xffff] __attribute__((aligned));
 struct nfq_handle *handler;
 
 // file global for storing packet
-struct callbackStruct *packet_data[ip_array_size];
-struct callbackStruct *packet_data_tail[ip_array_size];
-static pthread_mutex_t packet_data_mtx[ip_array_size];
-static volatile int packet_data_count[ip_array_size];
+struct callbackStruct *packet_data[queue_num];
+struct callbackStruct *packet_data_tail[queue_num];
+static pthread_mutex_t packet_data_mtx[queue_num];
+static volatile int packet_data_count[queue_num];
 
 // file global for OpenCL kernel
 struct ipv4Rule *ruleList = NULL;
@@ -442,9 +444,9 @@ int prep_rules()
 // only functions to load the programm
 int main()
 {
-    struct nfq_q_handle *queue[ip_array_size];
+    struct nfq_q_handle *queue[queue_num];
     pthread_t vt, rt;
-    int queueNum[ip_array_size];
+    int queueNum[queue_num];
     struct callbackStruct *tempNode;
 
     prep_rules();
@@ -479,7 +481,7 @@ int main()
         exit(1);
     }
 
-    for (int i = 0; i < ip_array_size; i++)
+    for (int i = 0; i < queue_num; i++)
     {
         queueNum[i] = i;
         queue[i] = nfq_create_queue(handler, i, netfilterCallback, &queueNum[i]);
@@ -510,7 +512,7 @@ int main()
     pthread_cancel(rt);
     pthread_cancel(vt);
 
-    for (int i = 0; i < ip_array_size; i++)
+    for (int i = 0; i < queue_num; i++)
     {
         nfq_destroy_queue(queue[i]);
     }
@@ -518,7 +520,7 @@ int main()
     nfq_close(handler);
 
     // clean up stored packet data
-    for (int i = 0; i < ip_array_size; i++)
+    for (int i = 0; i < queue_num; i++)
     {
         tempNode = packet_data[i];
         if (!tempNode)
