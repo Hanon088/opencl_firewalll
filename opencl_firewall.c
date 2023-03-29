@@ -237,7 +237,7 @@ void *verdictThread()
     uint32_t ip_addr[2] __attribute__((aligned));
     uint16_t sPort, dPort;
     uint8_t protocol;
-    struct callbackStruct *tempNode;
+    struct callbackStruct *tempNode = NULL;
     uint64_t array_ip_input[ip_array_size];
     uint8_t protocol_input[ip_array_size];
     uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
@@ -247,7 +247,7 @@ void *verdictThread()
     {
         for (int i = 0; i < ip_array_size; i++)
         {
-            if (packet_data_count[i] < 2)
+            if (packet_data_count[i] < queue_multipler + 1)
             {
                 goto cnt;
             }
@@ -264,7 +264,7 @@ void *verdictThread()
         for (int i = 0; i < ip_array_size; i++)
         {
             // makes sure each queues has at least 2 packets, perhaps can be optimised?
-            if (packet_data_count[i] < 2)
+            if (packet_data_count[i] < queue_multipler + 1)
             {
                 goto cnt;
             }
@@ -272,22 +272,27 @@ void *verdictThread()
 
         printf("\n\n\nSTARTING OCL PREP %ld\n\n\n", ++batch_num);
 
-        for (int i = 0; i < ip_array_size; i++)
+        for (int i = 0; i < queue_num; i++)
         {
-            // source and dest ip and masks are concatenated to 64 bits
-            ip_addr[0] = packet_data[i]->source_ip;
-            ip_addr[1] = packet_data[i]->dest_ip;
-            protocol = packet_data[i]->ip_protocol;
-            sPort = packet_data[i]->source_port;
-            dPort = packet_data[i]->dest_port;
-            protocol = packet_data[i]->ip_protocol;
-            printf("QUEUE %d PACKET ID: %u\n", i, packet_data[i]->packet_id);
-            printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), protocol, sPort, dPort);
+            tempNode = packet_data[i];
+            for (int j = 0; j < queue_multipler; j++)
+            {
+                // source and dest ip and masks are concatenated to 64 bits
+                ip_addr[0] = tempNode->source_ip;
+                ip_addr[1] = tempNode->dest_ip;
+                protocol = tempNode->ip_protocol;
+                sPort = tempNode->source_port;
+                dPort = tempNode->dest_port;
+                protocol = tempNode->ip_protocol;
+                printf("QUEUE %d PACKET ID: %u\n", i, tempNode->packet_id);
+                printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), protocol, sPort, dPort);
 
-            memcpy(&array_ip_input[i], ip_addr, 8);
-            protocol_input[i] = protocol;
-            s_port_input[i] = sPort;
-            d_port_input[i] = dPort;
+                memcpy(&array_ip_input[i * queue_multipler + j], ip_addr, 8);
+                protocol_input[i * queue_multipler + j] = protocol;
+                s_port_input[i * queue_multipler + j] = sPort;
+                d_port_input[i * queue_multipler + j] = dPort;
+                tempNode = tempNode->next;
+            }
         }
 
         // check rule_ip ip on cpu, can be removed later
@@ -332,32 +337,36 @@ void *verdictThread()
 
         printf("MATCH ON OPENCL DEVICE\n");
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
-        for (int i = 0; i < sizeof(result) / sizeof(int); i++)
+        for (int i = 0; i < queue_num; i++)
         {
-            printf("%d", result[i]);
-            nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i], 0, NULL);
-            err = pthread_mutex_lock(&packet_data_mtx[i]);
-            if (err != 0)
+            for (int j = 0; j < queue_multipler; j++)
             {
-                fprintf(stderr, "pthread_mutex_lock fails\n");
-                exit(1);
-            }
-            if (packet_data[i]->next)
-            {
-                tempNode = NULL;
+                printf("%d", result[i * queue_multipler + j]);
+                nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i * queue_multipler + j], 0, NULL);
 
-                tempNode = packet_data[i];
-                packet_data[i] = packet_data[i]->next;
-                tempNode->queue = NULL;
-                free(tempNode->nfad);
-                free(tempNode);
-                packet_data_count[i]--;
-            }
-            err = pthread_mutex_unlock(&packet_data_mtx[i]);
-            if (err != 0)
-            {
-                fprintf(stderr, "pthread_mutex_unlock fails\n");
-                exit(1);
+                err = pthread_mutex_lock(&packet_data_mtx[i]);
+                if (err != 0)
+                {
+                    fprintf(stderr, "pthread_mutex_lock fails\n");
+                    exit(1);
+                }
+                if (packet_data[i]->next)
+                {
+                    tempNode = NULL;
+
+                    tempNode = packet_data[i];
+                    packet_data[i] = packet_data[i]->next;
+                    tempNode->queue = NULL;
+                    free(tempNode->nfad);
+                    free(tempNode);
+                    packet_data_count[i]--;
+                }
+                err = pthread_mutex_unlock(&packet_data_mtx[i]);
+                if (err != 0)
+                {
+                    fprintf(stderr, "pthread_mutex_unlock fails\n");
+                    exit(1);
+                }
             }
         }
     }
