@@ -247,7 +247,7 @@ void *verdictThread()
     // waits for packets to arrive in ALL queues
     while (1)
     {
-        for (int i = 0; i < ip_array_size; i++)
+        for (int i = 0; i < queue_num; i++)
         {
             if (packet_data_count[i] < queue_multipler + 1)
             {
@@ -263,7 +263,7 @@ void *verdictThread()
 
     while (1)
     {
-        for (int i = 0; i < ip_array_size; i++)
+        for (int i = 0; i < queue_num; i++)
         {
             // makes sure each queues has at least 2 packets, perhaps can be optimised?
             if (packet_data_count[i] < queue_multipler + 1)
