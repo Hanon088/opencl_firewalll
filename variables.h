@@ -1,5 +1,5 @@
-#define ip_array_size 10
-#define queue_num 5
+#define ip_array_size 16
+#define queue_num 8
 #define queue_multipler 2
 
 extern const char *source;
