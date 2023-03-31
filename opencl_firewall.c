@@ -375,7 +375,7 @@ void *verdictThread()
         {
             for (int j = 0; j < queue_multipler; j++)
             {
-                printf("%u.%u.%u.%u\n", printable_ip(((uint32_t *)array_ip_input[i][j]))[0]);
+                printf("%u.%u.%u.%u\n", printable_ip(*(((uint32_t *)array_ip_input[i][j]))[0]));
             }
         }
     }
