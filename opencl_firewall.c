@@ -301,7 +301,7 @@ void *verdictThread()
         int test, protocol_result, sport_result, dport_result;
         int verdict_buffer = 0;
 
-        /*printf("MATCH ON CPU\n");
+        printf("MATCH ON CPU\n");
         for (int i = 0; i < ip_array_size * ruleNum; i++)
         {
             if (rule_protocol[i % ruleNum] == 0)
@@ -335,9 +335,9 @@ void *verdictThread()
                 verdict_buffer = 0;
             }
         }
-        printf("\n");*/
+        printf("\n");
 
-        /*printf("MATCH ON OPENCL DEVICE\n");
+        printf("MATCH ON OPENCL DEVICE\n");
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
         for (int i = 0; i < queue_num; i++)
         {
@@ -370,14 +370,14 @@ void *verdictThread()
                     exit(1);
                 }
             }
-        }*/
-        for (int i = 0; i < queue_num; i++)
+        }
+        /*for (int i = 0; i < queue_num; i++)
         {
             for (int j = 0; j < queue_multipler; j++)
             {
                 printf("%u.%u.%u.%u\n", printable_ip(array_ip_input[i][j]));
             }
-        }
+        }*/
     }
 }
 
