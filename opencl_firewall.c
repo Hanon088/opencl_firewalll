@@ -240,9 +240,12 @@ void *verdictThread()
     uint16_t sPort, dPort;
     uint8_t protocol;
     struct callbackStruct *tempNode = NULL;
-    uint64_t array_ip_input[queue_num][queue_multipler];
-    uint8_t protocol_input[queue_num][queue_multipler];
-    uint16_t s_port_input[queue_num][queue_multipler], d_port_input[queue_num][queue_multipler];
+    uint64_t array_ip_input[ip_array_size];
+    uint8_t protocol_input[ip_array_size];
+    uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
+    uint64_t array_ip_input_buff[queue_num][queue_multipler];
+    uint8_t protocol_input_buff[queue_num][queue_multipler];
+    uint16_t s_port_input_buff[queue_num][queue_multipler], d_port_input_buff[queue_num][queue_multipler];
 
     // waits for packets to arrive in ALL queues
     while (1)
@@ -289,19 +292,24 @@ void *verdictThread()
                 printf("QUEUE %d PACKET ID: %u\n", i, tempNode->packet_id);
                 printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), protocol, sPort, dPort);
 
-                memcpy(&array_ip_input[i][j], ip_addr, 8);
-                protocol_input[i][j] = protocol;
-                s_port_input[i][j] = sPort;
-                d_port_input[i][j] = dPort;
+                memcpy(&array_ip_input_buff[i][j], ip_addr, 8);
+                protocol_input_buff[i][j] = protocol;
+                s_port_input_buff[i][j] = sPort;
+                d_port_input_buff[i][j] = dPort;
                 tempNode = tempNode->next;
             }
         }
 
+        memcpy(array_ip_input, array_ip_input_buff, ip_array_size * 8);
+        memcpy(protocol_input, protocol_input_buff, ip_array_size * 1);
+        memcpy(s_port_input, s_port_input_buff, ip_array_size * 2);
+        memcpy(d_port_input, d_port_input_buff, ip_array_size * 2);
         // check rule_ip ip on cpu, can be removed later
-        int test, protocol_result, sport_result, dport_result;
+        int test,
+            protocol_result, sport_result, dport_result;
         int verdict_buffer = 0;
 
-        /*printf("MATCH ON CPU\n");
+        printf("MATCH ON CPU\n");
         for (int i = 0; i < ip_array_size * ruleNum; i++)
         {
             if (rule_protocol[i % ruleNum] == 0)
@@ -335,7 +343,7 @@ void *verdictThread()
                 verdict_buffer = 0;
             }
         }
-        printf("\n");*/
+        printf("\n");
 
         printf("MATCH ON OPENCL DEVICE\n");
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
