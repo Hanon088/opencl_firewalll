@@ -1,4 +1,4 @@
-iptables -D INPUT -p tcp -m tcp --dport 80 -j NFQUEUE --queue-balance 0:4 --queue-cpu-fanout
-iptables -D INPUT -p icmp -j NFQUEUE --queue-balance 0:4 --queue-cpu-fanout
-iptables -D OUTPUT -p tcp -m tcp --dport 80 -j NFQUEUE --queue-balance 0:4 --queue-cpu-fanout
-iptables -D OUTPUT -p icmp -j NFQUEUE --queue-balance 0:4 --queue-cpu-fanout
+iptables -D INPUT -p tcp -m tcp --dport 80 -j NFQUEUE --queue-balance 0:2 --queue-cpu-fanout
+iptables -D INPUT -p icmp -j NFQUEUE --queue-balance 0:2 --queue-cpu-fanout
+iptables -D OUTPUT -p tcp -m tcp --dport 80 -j NFQUEUE --queue-balance 0:2 --queue-cpu-fanout
+iptables -D OUTPUT -p icmp -j NFQUEUE --queue-balance 0:2 --queue-cpu-fanout
