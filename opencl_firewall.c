@@ -337,7 +337,7 @@ void *verdictThread()
         }
         printf("\n");*/
 
-        printf("MATCH ON OPENCL DEVICE\n");
+        /*printf("MATCH ON OPENCL DEVICE\n");
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
         for (int i = 0; i < queue_num; i++)
         {
@@ -369,6 +369,13 @@ void *verdictThread()
                     fprintf(stderr, "pthread_mutex_unlock fails\n");
                     exit(1);
                 }
+            }
+        }*/
+        for (int i = 0; i < queue_num; i++)
+        {
+            for (int j = 0; j < queue_multipler; j++)
+            {
+                printf("%u.%u.%u.%u\n", printable_ip(((uint32_t *)array_ip_input[i][j]))[0]);
             }
         }
     }
