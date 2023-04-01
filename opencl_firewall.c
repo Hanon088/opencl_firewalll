@@ -379,11 +379,11 @@ void *verdictThread()
                 }
             }
         }
-        for (int i = 0; i < ip_array_size; i++)
+        /*for (int i = 0; i < ip_array_size; i++)
         {
             printf("IP %u.%u.%u.%u\n", printable_ip(array_ip_input[i]));
             printf("Proto %u sPort %u dPort %u\n", protocol_input[i], s_port_input[i], d_port_input[i]);
-        }
+        }*/
     }
 }
 
