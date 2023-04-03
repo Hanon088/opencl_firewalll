@@ -446,11 +446,11 @@ int prep_rules()
     dAddr = malloc(ruleNum * 4);
     sMask = malloc(ruleNum * 4);
     dMask = malloc(ruleNum * 4);
-    // sPort = malloc(ruleNum * 2);
-    // dPort = malloc(ruleNum * 2);
+    sPort = malloc(ruleNum * 2);
+    dPort = malloc(ruleNum * 2);
 
     printf("Number of rules %d\n", ruleNum);
-    rule_list_to_arr(ruleList, sAddr, sMask, dAddr, dMask, rule_protocol, rule_s_port, rule_d_port, rule_verdict);
+    rule_list_to_arr(ruleList, sAddr, sMask, dAddr, dMask, rule_protocol, sPort, dPort, rule_verdict);
     free_rule_list(ruleList);
 
     /*loading procedure may be redundant but easier to modify if OpenCL arg size change, such as merging source and dest ip*/
@@ -465,16 +465,16 @@ int prep_rules()
         mergeBuff[1] = dMask[i];
         memcpy(&rule_mask[i], mergeBuff, 8);
     }
-    // memcpy(rule_s_port, sPort, ruleNum * 2);
-    // memcpy(rule_d_port, dPort, ruleNum * 2);
+    memcpy(rule_s_port, sPort, ruleNum * 2);
+    memcpy(rule_d_port, dPort, ruleNum * 2);
 
     // free  local buffers
     free(sAddr);
     free(dAddr);
     free(sMask);
     free(dMask);
-    // free(sPort);
-    // free(dPort);
+    free(sPort);
+    free(dPort);
     return 0;
 }
 

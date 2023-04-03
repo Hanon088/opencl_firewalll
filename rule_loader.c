@@ -138,8 +138,8 @@ int rule_list_to_arr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask
         memcpy(&dMask[count], &temp->dest_ip_mask, 4);
 
         memcpy(&protoArr[count], &temp->ip_protocol, 1);
-        memcpy(sPortArr + count * 2, &temp->source_port, 2);
-        memcpy(dPortArr + count * 2, &temp->dest_port, 2);
+        memcpy(&sPortArr[count], &temp->source_port, 2);
+        memcpy(&dPortArr[count], &temp->dest_port, 2);
 
         memcpy(&verdictArr[count], &temp->verdict, sizeof(int));
 
