@@ -545,10 +545,10 @@ free(sPort);
 free(dPort);
 return 0;
 }
-* /
+*/
 
-    // only functions to load the programm
-    int main()
+// only functions to load the programm
+int main()
 {
     struct nfq_q_handle *queue[queue_num];
     pthread_t vt, rt;
@@ -571,102 +571,102 @@ return 0;
     rule[5] = malloc(ruleNum * sizeof(int));
     prep_rules(rule[0], rule[1], rule[2], rule[3], rule[4], rule[5]);*/
 
-/*printf("\nFROM MAIN\n");
-for (int i = 0; i < ruleNum; i++)
-{
-    printf("RULE %d s %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-}*/
-
-for (int i = 0; i < ip_array_size; i++)
-{
-    packet_data[i] = NULL;
-    packet_data_tail[i] = NULL;
-    packet_data_mtx[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-    packet_data_count[i] = 0;
-}
-
-handler = nfq_open();
-
-if (!handler)
-{
-    fprintf(stderr, "error during nfq_open()\n");
-    exit(1);
-}
-
-// unbinding existing nf_queue handler for AF_INET (if any)
-if (nfq_unbind_pf(handler, AF_INET) < 0)
-{
-    fprintf(stderr, "error during nfq_unbind_pf()\n");
-    exit(1);
-}
-
-// binding nfnetlink_queue as nf_queue handler for AF_INET
-if (nfq_bind_pf(handler, AF_INET) < 0)
-{
-    fprintf(stderr, "error during nfq_bind_pf()\n");
-    exit(1);
-}
-
-for (int i = 0; i < queue_num; i++)
-{
-    queueNum[i] = i;
-    queue[i] = nfq_create_queue(handler, i, netfilterCallback, &queueNum[i]);
-    if (!queue[i])
+    /*printf("\nFROM MAIN\n");
+    for (int i = 0; i < ruleNum; i++)
     {
-        fprintf(stderr, "error during nfq_create_queue()\n");
+        printf("RULE %d s %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
+    }*/
+
+    for (int i = 0; i < ip_array_size; i++)
+    {
+        packet_data[i] = NULL;
+        packet_data_tail[i] = NULL;
+        packet_data_mtx[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+        packet_data_count[i] = 0;
+    }
+
+    handler = nfq_open();
+
+    if (!handler)
+    {
+        fprintf(stderr, "error during nfq_open()\n");
         exit(1);
     }
 
-    if (nfq_set_mode(queue[i], NFQNL_COPY_PACKET, 0xffff) < 0)
+    // unbinding existing nf_queue handler for AF_INET (if any)
+    if (nfq_unbind_pf(handler, AF_INET) < 0)
     {
-        fprintf(stderr, "can't set packet_copy mode\n");
+        fprintf(stderr, "error during nfq_unbind_pf()\n");
         exit(1);
     }
-}
 
-netf_fd = nfq_fd(handler);
-pthread_create(&rt, NULL, recvThread, NULL);
-pthread_create(&vt, NULL, verdictThread, NULL);
+    // binding nfnetlink_queue as nf_queue handler for AF_INET
+    if (nfq_bind_pf(handler, AF_INET) < 0)
+    {
+        fprintf(stderr, "error during nfq_bind_pf()\n");
+        exit(1);
+    }
 
-// need to turn this to a daemon
-while (1)
-{
-    continue;
-}
+    for (int i = 0; i < queue_num; i++)
+    {
+        queueNum[i] = i;
+        queue[i] = nfq_create_queue(handler, i, netfilterCallback, &queueNum[i]);
+        if (!queue[i])
+        {
+            fprintf(stderr, "error during nfq_create_queue()\n");
+            exit(1);
+        }
 
-// clean up queues
-pthread_cancel(rt);
-pthread_cancel(vt);
+        if (nfq_set_mode(queue[i], NFQNL_COPY_PACKET, 0xffff) < 0)
+        {
+            fprintf(stderr, "can't set packet_copy mode\n");
+            exit(1);
+        }
+    }
 
-for (int i = 0; i < queue_num; i++)
-{
-    nfq_destroy_queue(queue[i]);
-}
+    netf_fd = nfq_fd(handler);
+    pthread_create(&rt, NULL, recvThread, NULL);
+    pthread_create(&vt, NULL, verdictThread, NULL);
 
-nfq_close(handler);
-
-// clean up stored packet data
-for (int i = 0; i < queue_num; i++)
-{
-    tempNode = packet_data[i];
-    if (!tempNode)
+    // need to turn this to a daemon
+    while (1)
     {
         continue;
     }
-    while (tempNode->next != NULL)
-    {
-        tempNode = tempNode->next;
-        free(packet_data[i]);
-        packet_data[i] = tempNode;
-    }
-}
 
-// free rule arrays
-/*free(rule[0]);
-free(rule[1]);
-free(rule[2]);
-free(rule[3]);
-free(rule[4]);
-free(rule[5]);*/
-return 0;
+    // clean up queues
+    pthread_cancel(rt);
+    pthread_cancel(vt);
+
+    for (int i = 0; i < queue_num; i++)
+    {
+        nfq_destroy_queue(queue[i]);
+    }
+
+    nfq_close(handler);
+
+    // clean up stored packet data
+    for (int i = 0; i < queue_num; i++)
+    {
+        tempNode = packet_data[i];
+        if (!tempNode)
+        {
+            continue;
+        }
+        while (tempNode->next != NULL)
+        {
+            tempNode = tempNode->next;
+            free(packet_data[i]);
+            packet_data[i] = tempNode;
+        }
+    }
+
+    // free rule arrays
+    /*free(rule[0]);
+    free(rule[1]);
+    free(rule[2]);
+    free(rule[3]);
+    free(rule[4]);
+    free(rule[5]);*/
+    return 0;
 }
