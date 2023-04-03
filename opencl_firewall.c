@@ -426,20 +426,13 @@ void *recvThread()
     return 0;
 }
 
-int prep_rules()
+int prep_rules(uint64_t rule_ip, uint64_t rule_mask, uint8_t rule_protocol, uint16_t rule_s_port, uint16_t rule_d_port, int rule_verdict)
 {
     uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2] __attribute__((aligned));
     uint16_t *sPort, *dPort;
 
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(rule_file, ruleList);
-
-    rule_ip = malloc(ruleNum * 8);
-    rule_mask = malloc(ruleNum * 8);
-    rule_protocol = malloc(ruleNum);
-    rule_s_port = malloc(ruleNum * 2);
-    rule_d_port = malloc(ruleNum * 2);
-    rule_verdict = malloc(ruleNum * sizeof(int));
 
     // local buffers used to load rules
     sAddr = malloc(ruleNum * 4);
@@ -486,7 +479,13 @@ int main()
     int queueNum[queue_num];
     struct callbackStruct *tempNode;
 
-    prep_rules();
+    rule_ip = malloc(ruleNum * 8);
+    rule_mask = malloc(ruleNum * 8);
+    rule_protocol = malloc(ruleNum);
+    rule_s_port = malloc(ruleNum * 2);
+    rule_d_port = malloc(ruleNum * 2);
+    rule_verdict = malloc(ruleNum * sizeof(int));
+    prep_rules(rule_ip, rule_mask, rule_protocol, rule_s_port, rule_d_port, rule_verdict);
 
     printf("\nFROM MAIN\n");
     for (int i = 0; i < ruleNum; i++)
@@ -579,11 +578,11 @@ int main()
     }
 
     // free rule arrays
-    /*free(rule_ip);
+    free(rule_ip);
     free(rule_mask);
     free(rule_verdict);
     free(rule_protocol);
     free(rule_s_port);
-    free(rule_d_port);*/
+    free(rule_d_port);
     return 0;
 }
