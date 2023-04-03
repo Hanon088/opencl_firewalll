@@ -266,7 +266,7 @@ void *verdictThread()
     rule_protocol = malloc(ruleNum);
     rule_s_port = malloc(ruleNum * 2);
     rule_d_port = malloc(ruleNum * 2);
-    rule_verdict = rmalloc(ruleNum * sizeof(int));
+    rule_verdict = malloc(ruleNum * sizeof(int));
 
     // local buffers used to load rules
     sAddr = malloc(ruleNum * 4);
