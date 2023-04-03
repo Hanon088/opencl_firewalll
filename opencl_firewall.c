@@ -277,6 +277,13 @@ void *verdictThread()
 
         printf("\n\n\nSTARTING OCL PREP %ld\n\n\n", ++batch_num);
 
+        printf("\n");
+        for (int i = 0; i < ruleNum; i++)
+        {
+            // printf("RULE s %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
+            printf("RULE proto %d sp %u dp %u\n", rule_protocol[i], rule_s_port[i], rule_d_port[i]);
+        }
+
         for (int i = 0; i < queue_num; i++)
         {
             tempNode = packet_data[i];
@@ -308,13 +315,6 @@ void *verdictThread()
         int test,
             protocol_result, sport_result, dport_result;
         int verdict_buffer = 0;
-
-        printf("\n");
-        for (int i = 0; i < ruleNum; i++)
-        {
-            // printf("RULE s %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-            printf("RULE proto %d sp %u dp %u\n", rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-        }
 
         printf("\n");
         for (int i = 0; i < ip_array_size; i++)
