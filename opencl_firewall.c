@@ -426,7 +426,7 @@ void *recvThread()
     return 0;
 }
 
-int prep_rules(uint64_t rule_ip, uint64_t rule_mask, uint8_t rule_protocol, uint16_t rule_s_port, uint16_t rule_d_port, int rule_verdict)
+int prep_rules(uint64_t *rule_ip, uint64_t *rule_mask, uint8_t *rule_protocol, uint16_t *rule_s_port, uint16_t *rule_d_port, int *rule_verdict)
 {
     uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2] __attribute__((aligned));
     uint16_t *sPort, *dPort;
