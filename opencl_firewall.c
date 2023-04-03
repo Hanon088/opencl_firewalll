@@ -245,7 +245,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 // takes data stored by callback and calls OpenCL kernel
 void *verdictThread(void *args)
 {
-    struct ruleAttributes rule = (ruleAttributes *)args;
+    struct ruleAttributes rule = (struct ruleAttributes *)args;
 
     uint64_t *rule_ip = rule.ip;
     uint64_t *rule_mask = rule.mask;
