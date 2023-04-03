@@ -428,12 +428,6 @@ void *verdictThread(void *args)
             printf("Proto %u sPort %u dPort %u\n", protocol_input[i], s_port_input[i], d_port_input[i]);
         }*/
     }
-    free(rule_ip);
-    free(rule_mask);
-    free(rule_verdict);
-    free(rule_protocol);
-    free(rule_s_port);
-    free(rule_d_port);
 }
 
 // connect to libnetfilter_queue via recv, could this be a bottleneck?
@@ -513,11 +507,11 @@ int main()
     rule->verdict = malloc(ruleNum * sizeof(int));
     prep_rules(rule->ip, rule->mask, rule->protocol, rule->s_port, rule->d_port, rule->verdict);
 
-    printf("\nFROM MAIN\n");
+    /*printf("\nFROM MAIN\n");
     for (int i = 0; i < ruleNum; i++)
     {
         printf("RULE %d s %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-    }
+    }*/
 
     for (int i = 0; i < ip_array_size; i++)
     {
@@ -604,11 +598,12 @@ int main()
     }
 
     // free rule arrays
-    free(rule.ip);
-    free(rule.mask);
-    free(rule.verdict);
-    free(rule.protocol);
-    free(rule.s_port);
-    free(rule.d_port);
+    free(rule->ip);
+    free(rule->mask);
+    free(rule->verdict);
+    free(rule->protocol);
+    free(rule->s_port);
+    free(rule->d_port);
+    free(rule);
     return 0;
 }
