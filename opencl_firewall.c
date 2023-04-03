@@ -56,13 +56,13 @@ static volatile int packet_data_count[queue_num];
 // file global for OpenCL kernel
 struct ipv4Rule *ruleList = NULL;
 static int ruleNum;
-static uint64_t *rule_ip = NULL;
-static uint64_t *rule_mask = NULL;
-static uint8_t *rule_protocol = NULL;
-static uint16_t *rule_s_port = NULL;
-static uint16_t *rule_d_port = NULL;
-static int *rule_verdict = NULL;
-static int result[ip_array_size];
+uint64_t *rule_ip = NULL;
+uint64_t *rule_mask = NULL;
+uint8_t *rule_protocol = NULL;
+uint16_t *rule_s_port = NULL;
+uint16_t *rule_d_port = NULL;
+int *rule_verdict = NULL;
+int result[ip_array_size];
 
 // callback function for libnetfilter_queue
 static int
@@ -309,7 +309,7 @@ void *verdictThread()
             protocol_result, sport_result, dport_result;
         int verdict_buffer = 0;
 
-        printf("\n");
+        /*printf("\n");
         for (int i = 0; i < ruleNum; i++)
         {
             // printf("RULE s %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
@@ -321,7 +321,7 @@ void *verdictThread()
         {
             printf("sIP %u.%u.%u.%u dIP %u.%u.%u.%u\n", printable_ip_joined(array_ip_input[i]));
             printf("Proto %u sPort %u dPort %u\n", protocol_input[i], s_port_input[i], d_port_input[i]);
-        }
+        }*/
 
         printf("MATCH ON CPU\n");
         for (int i = 0; i < ip_array_size * ruleNum; i++)
@@ -486,6 +486,12 @@ int main()
     struct callbackStruct *tempNode;
 
     prep_rules();
+
+    printf("\nFROM MAIN\n");
+    for (int i = 0; i < ruleNum; i++)
+    {
+        printf("RULE %d s %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
+    }
 
     for (int i = 0; i < ip_array_size; i++)
     {
