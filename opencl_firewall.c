@@ -23,7 +23,7 @@
 #include "compare.h"
 #include "rule_loader.h"
 
-struct ruleAttributes
+/*struct ruleAttributes
 {
     uint64_t *ip;
     uint64_t *mask;
@@ -31,8 +31,8 @@ struct ruleAttributes
     uint16_t *s_port;
     uint16_t *d_port;
     int *verdict;
-};
-struct ruleAttributes *rule = NULL;
+};*/
+void *rule[6];
 
 // struct to store packet data from callback
 struct callbackStruct
@@ -244,16 +244,16 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 }
 
 // takes data stored by callback and calls OpenCL kernel
-void *verdictThread(void *args)
+void *verdictThread()
 {
-    struct ruleAttributes *rule = (struct ruleAttributes *)args;
+    // struct ruleAttributes *rule = (struct ruleAttributes *)args;
 
-    uint64_t *rule_ip = (*rule).ip;
-    uint64_t *rule_mask = (*rule).mask;
-    uint8_t *rule_protocol = (*rule).protocol;
-    uint16_t *rule_s_port = (*rule).s_port;
-    uint16_t *rule_d_port = (*rule).d_port;
-    int *rule_verdict = (*rule).verdict;
+    uint64_t *rule_ip = rule[0];
+    uint64_t *rule_mask = rule[1];
+    uint8_t *rule_protocol = rule[2];
+    uint16_t *rule_s_port = rule[3];
+    uint16_t *rule_d_port = rule[4];
+    int *rule_verdict = rule[5];
 
     int err;
     uint32_t ip_addr[2] __attribute__((aligned));
@@ -498,15 +498,21 @@ int main()
     pthread_t vt, rt;
     int queueNum[queue_num];
     struct callbackStruct *tempNode;
-    rule = malloc(sizeof(struct ruleAttributes));
+    // rule = malloc(sizeof(struct ruleAttributes));
 
-    rule->ip = malloc(ruleNum * 8);
-    rule->mask = malloc(ruleNum * 8);
-    rule->protocol = malloc(ruleNum);
-    rule->s_port = malloc(ruleNum * 2);
-    rule->d_port = malloc(ruleNum * 2);
-    rule->verdict = malloc(ruleNum * sizeof(int));
-    prep_rules(rule->ip, rule->mask, rule->protocol, rule->s_port, rule->d_port, rule->verdict);
+    // s d ip
+    rule[0] = malloc(ruleNum * 8);
+    // s d mask
+    rule[1] = malloc(ruleNum * 8);
+    // protocol
+    rule[2] = malloc(ruleNum);
+    // sport
+    rule[3] = malloc(ruleNum * 2);
+    // dport
+    rule[4] = malloc(ruleNum * 2);
+    // verdict
+    rule[5] = malloc(ruleNum * sizeof(int));
+    prep_rules(rule[0], rule[1], rule[2], rule[3], rule[4], rule[5]);
 
     /*printf("\nFROM MAIN\n");
     for (int i = 0; i < ruleNum; i++)
@@ -563,7 +569,7 @@ int main()
 
     netf_fd = nfq_fd(handler);
     pthread_create(&rt, NULL, recvThread, NULL);
-    pthread_create(&vt, NULL, verdictThread, (void *)rule);
+    pthread_create(&vt, NULL, verdictThread, NULL);
 
     // need to turn this to a daemon
     while (1)
@@ -599,12 +605,11 @@ int main()
     }
 
     // free rule arrays
-    free(rule->ip);
-    free(rule->mask);
-    free(rule->verdict);
-    free(rule->protocol);
-    free(rule->s_port);
-    free(rule->d_port);
-    free(rule);
+    free(rule[0]);
+    free(rule[1]);
+    free(rule[2]);
+    free(rule[3]);
+    free(rule[4]);
+    free(rule[5]);
     return 0;
 }
