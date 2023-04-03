@@ -245,14 +245,14 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 // takes data stored by callback and calls OpenCL kernel
 void *verdictThread(void *args)
 {
-    struct ruleAttributes rule = (struct ruleAttributes *)args;
+    struct ruleAttributes *rule = (struct ruleAttributes *)args;
 
-    uint64_t *rule_ip = rule.ip;
-    uint64_t *rule_mask = rule.mask;
-    uint8_t *rule_protocol = rule.protocol;
-    uint16_t *rule_s_port = rule.s_port;
-    uint16_t *rule_d_port = rule.d_port;
-    int *rule_verdict = rule.verdict;
+    uint64_t *rule_ip = (*rule).ip;
+    uint64_t *rule_mask = (*rule).mask;
+    uint8_t *rule_protocol = (*rule).protocol;
+    uint16_t *rule_s_port = (*rule).s_port;
+    uint16_t *rule_d_port = (*rule).d_port;
+    int *rule_verdict = (*rule).verdict;
 
     int err;
     uint32_t ip_addr[2] __attribute__((aligned));
@@ -503,15 +503,15 @@ int main()
     pthread_t vt, rt;
     int queueNum[queue_num];
     struct callbackStruct *tempNode;
-    struct ruleAttributes rule;
+    struct ruleAttributes *rule = malloc(sizeof(struct ruleAttributes));
 
-    rule.ip = malloc(ruleNum * 8);
-    rule.mask = malloc(ruleNum * 8);
-    rule.protocol = malloc(ruleNum);
-    rule.s_port = malloc(ruleNum * 2);
-    rule.d_port = malloc(ruleNum * 2);
-    rule.verdict = malloc(ruleNum * sizeof(int));
-    prep_rules(rule.ip, rule.mask, rule.protocol, rule.s_port, rule.d_port, rule.verdict);
+    rule->ip = malloc(ruleNum * 8);
+    rule->mask = malloc(ruleNum * 8);
+    rule->protocol = malloc(ruleNum);
+    rule->s_port = malloc(ruleNum * 2);
+    rule->d_port = malloc(ruleNum * 2);
+    rule->verdict = malloc(ruleNum * sizeof(int));
+    prep_rules(rule->ip, rule->mask, rule->protocol, rule->s_port, rule->d_port, rule->verdict);
 
     printf("\nFROM MAIN\n");
     for (int i = 0; i < ruleNum; i++)
@@ -568,7 +568,7 @@ int main()
 
     netf_fd = nfq_fd(handler);
     pthread_create(&rt, NULL, recvThread, NULL);
-    pthread_create(&vt, NULL, verdictThread, &rule);
+    pthread_create(&vt, NULL, verdictThread, (void *)rule);
 
     // need to turn this to a daemon
     while (1)
