@@ -32,6 +32,7 @@ struct ruleAttributes
     uint16_t *d_port;
     int *verdict;
 };
+struct ruleAttributes *rule = NULL;
 
 // struct to store packet data from callback
 struct callbackStruct
@@ -497,7 +498,7 @@ int main()
     pthread_t vt, rt;
     int queueNum[queue_num];
     struct callbackStruct *tempNode;
-    struct ruleAttributes *rule = malloc(sizeof(struct ruleAttributes));
+    rule = malloc(sizeof(struct ruleAttributes));
 
     rule->ip = malloc(ruleNum * 8);
     rule->mask = malloc(ruleNum * 8);
