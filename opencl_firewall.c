@@ -237,8 +237,8 @@ void *verdictThread()
 {
     int err;
     uint32_t ip_addr[2] __attribute__((aligned));
-    uint16_t sPort, dPort;
-    uint8_t protocol;
+    // uint16_t sPort, dPort;
+    // uint8_t protocol;
     struct callbackStruct *tempNode = NULL;
     uint64_t array_ip_input[ip_array_size];
     uint8_t protocol_input[ip_array_size];
@@ -292,17 +292,17 @@ void *verdictThread()
                 // source and dest ip and masks are concatenated to 64 bits
                 ip_addr[0] = tempNode->source_ip;
                 ip_addr[1] = tempNode->dest_ip;
-                protocol = tempNode->ip_protocol;
-                sPort = tempNode->source_port;
-                dPort = tempNode->dest_port;
-                protocol = tempNode->ip_protocol;
+                // protocol = tempNode->ip_protocol;
+                // sPort = tempNode->source_port;
+                // dPort = tempNode->dest_port;
+                // protocol = tempNode->ip_protocol;
                 printf("QUEUE %d PACKET ID: %u\n", i, tempNode->packet_id);
-                printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), protocol, sPort, dPort);
+                printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), tempNode->ip_protocol, tempNode->source_port, tempNode->dest_port);
 
                 memcpy(&array_ip_input_buff[i][j], ip_addr, 8);
-                protocol_input_buff[i][j] = protocol;
-                s_port_input_buff[i][j] = sPort;
-                d_port_input_buff[i][j] = dPort;
+                protocol_input_buff[i][j] = tempNode->ip_protocol;
+                s_port_input_buff[i][j] = tempNode->source_port;
+                d_port_input_buff[i][j] = tempNode->dest_port;
                 tempNode = tempNode->next;
             }
         }
