@@ -56,13 +56,13 @@ static volatile int packet_data_count[queue_num];
 // file global for OpenCL kernel
 struct ipv4Rule *ruleList = NULL;
 static int ruleNum;
-uint64_t *rule_ip = NULL;
-uint64_t *rule_mask = NULL;
-uint8_t *rule_protocol = NULL;
-uint16_t *rule_s_port = NULL;
-uint16_t *rule_d_port = NULL;
-int *rule_verdict = NULL;
-int result[ip_array_size];
+static uint64_t *rule_ip = NULL;
+static uint64_t *rule_mask = NULL;
+static uint8_t *rule_protocol = NULL;
+static uint16_t *rule_s_port = NULL;
+static uint16_t *rule_d_port = NULL;
+static int *rule_verdict = NULL;
+static int result[ip_array_size];
 
 // callback function for libnetfilter_queue
 static int
