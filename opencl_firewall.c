@@ -248,12 +248,60 @@ void *verdictThread()
 {
     // struct ruleAttributes *rule = (struct ruleAttributes *)args;
 
-    uint64_t *rule_ip = rule[0];
-    uint64_t *rule_mask = rule[1];
-    uint8_t *rule_protocol = rule[2];
-    uint16_t *rule_s_port = rule[3];
-    uint16_t *rule_d_port = rule[4];
-    int *rule_verdict = rule[5];
+    uint64_t *rule_ip;
+    uint64_t *rule_mask;
+    uint8_t *rule_protocol;
+    uint16_t *rule_s_port;
+    uint16_t *rule_d_port;
+    int *rule_verdict;
+
+    uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2] __attribute__((aligned));
+    uint16_t *sPort, *dPort;
+
+    ruleList = malloc(sizeof(struct ipv4Rule));
+    ruleNum = load_rules(rule_file, ruleList);
+
+    rule_ip = malloc(ruleNum * 8);
+    rule_mask = malloc(ruleNum * 8);
+    rule_protocol = malloc(ruleNum);
+    rule_s_port = malloc(ruleNum * 2);
+    rule_d_port = malloc(ruleNum * 2);
+    rule_verdict = rmalloc(ruleNum * sizeof(int));
+
+    // local buffers used to load rules
+    sAddr = malloc(ruleNum * 4);
+    dAddr = malloc(ruleNum * 4);
+    sMask = malloc(ruleNum * 4);
+    dMask = malloc(ruleNum * 4);
+    sPort = malloc(ruleNum * 2);
+    dPort = malloc(ruleNum * 2);
+
+    printf("Number of rules %d\n", ruleNum);
+    rule_list_to_arr(ruleList, sAddr, sMask, dAddr, dMask, rule_protocol, sPort, dPort, rule_verdict);
+    free_rule_list(ruleList);
+
+    /*loading procedure may be redundant but easier to modify if OpenCL arg size change, such as merging source and dest ip*/
+
+    for (int i = 0; i < ruleNum; i++)
+    {
+        printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip(sAddr[i]), printable_ip(dAddr[i]), rule_protocol[i], sPort[i], dPort[i]);
+        mergeBuff[0] = sAddr[i];
+        mergeBuff[1] = dAddr[i];
+        memcpy(&rule_ip[i], mergeBuff, 8);
+        mergeBuff[0] = sMask[i];
+        mergeBuff[1] = dMask[i];
+        memcpy(&rule_mask[i], mergeBuff, 8);
+    }
+    memcpy(rule_s_port, sPort, ruleNum * 2);
+    memcpy(rule_d_port, dPort, ruleNum * 2);
+
+    // free  local buffers
+    free(sAddr);
+    free(dAddr);
+    free(sMask);
+    free(dMask);
+    free(sPort);
+    free(dPort);
 
     int err;
     uint32_t ip_addr[2] __attribute__((aligned));
@@ -429,6 +477,12 @@ void *verdictThread()
             printf("Proto %u sPort %u dPort %u\n", protocol_input[i], s_port_input[i], d_port_input[i]);
         }*/
     }
+    free(rule_ip);
+    free(rule_mask);
+    free(rule_protocol);
+    free(rule_s_port);
+    free(rule_d_port);
+    free(rule_verdict);
 }
 
 // connect to libnetfilter_queue via recv, could this be a bottleneck?
@@ -446,6 +500,7 @@ void *recvThread()
     return 0;
 }
 
+/*
 int prep_rules(uint64_t *rule_ip, uint64_t *rule_mask, uint8_t *rule_protocol, uint16_t *rule_s_port, uint16_t *rule_d_port, int *rule_verdict)
 {
     uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2] __attribute__((aligned));
@@ -467,37 +522,39 @@ int prep_rules(uint64_t *rule_ip, uint64_t *rule_mask, uint8_t *rule_protocol, u
     free_rule_list(ruleList);
 
     /*loading procedure may be redundant but easier to modify if OpenCL arg size change, such as merging source and dest ip*/
-
-    for (int i = 0; i < ruleNum; i++)
-    {
-        printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip(sAddr[i]), printable_ip(dAddr[i]), rule_protocol[i], sPort[i], dPort[i]);
-        mergeBuff[0] = sAddr[i];
-        mergeBuff[1] = dAddr[i];
-        memcpy(&rule_ip[i], mergeBuff, 8);
-        mergeBuff[0] = sMask[i];
-        mergeBuff[1] = dMask[i];
-        memcpy(&rule_mask[i], mergeBuff, 8);
-    }
-    memcpy(rule_s_port, sPort, ruleNum * 2);
-    memcpy(rule_d_port, dPort, ruleNum * 2);
-
-    // free  local buffers
-    free(sAddr);
-    free(dAddr);
-    free(sMask);
-    free(dMask);
-    free(sPort);
-    free(dPort);
-    return 0;
+/*
+for (int i = 0; i < ruleNum; i++)
+{
+    printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip(sAddr[i]), printable_ip(dAddr[i]), rule_protocol[i], sPort[i], dPort[i]);
+    mergeBuff[0] = sAddr[i];
+    mergeBuff[1] = dAddr[i];
+    memcpy(&rule_ip[i], mergeBuff, 8);
+    mergeBuff[0] = sMask[i];
+    mergeBuff[1] = dMask[i];
+    memcpy(&rule_mask[i], mergeBuff, 8);
 }
+memcpy(rule_s_port, sPort, ruleNum * 2);
+memcpy(rule_d_port, dPort, ruleNum * 2);
 
-// only functions to load the programm
-int main()
+// free  local buffers
+free(sAddr);
+free(dAddr);
+free(sMask);
+free(dMask);
+free(sPort);
+free(dPort);
+return 0;
+}
+* /
+
+    // only functions to load the programm
+    int main()
 {
     struct nfq_q_handle *queue[queue_num];
     pthread_t vt, rt;
     int queueNum[queue_num];
     struct callbackStruct *tempNode;
+    /*
     // rule = malloc(sizeof(struct ruleAttributes));
 
     // s d ip
@@ -512,104 +569,104 @@ int main()
     rule[4] = malloc(ruleNum * 2);
     // verdict
     rule[5] = malloc(ruleNum * sizeof(int));
-    prep_rules(rule[0], rule[1], rule[2], rule[3], rule[4], rule[5]);
+    prep_rules(rule[0], rule[1], rule[2], rule[3], rule[4], rule[5]);*/
 
-    /*printf("\nFROM MAIN\n");
-    for (int i = 0; i < ruleNum; i++)
+/*printf("\nFROM MAIN\n");
+for (int i = 0; i < ruleNum; i++)
+{
+    printf("RULE %d s %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
+}*/
+
+for (int i = 0; i < ip_array_size; i++)
+{
+    packet_data[i] = NULL;
+    packet_data_tail[i] = NULL;
+    packet_data_mtx[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+    packet_data_count[i] = 0;
+}
+
+handler = nfq_open();
+
+if (!handler)
+{
+    fprintf(stderr, "error during nfq_open()\n");
+    exit(1);
+}
+
+// unbinding existing nf_queue handler for AF_INET (if any)
+if (nfq_unbind_pf(handler, AF_INET) < 0)
+{
+    fprintf(stderr, "error during nfq_unbind_pf()\n");
+    exit(1);
+}
+
+// binding nfnetlink_queue as nf_queue handler for AF_INET
+if (nfq_bind_pf(handler, AF_INET) < 0)
+{
+    fprintf(stderr, "error during nfq_bind_pf()\n");
+    exit(1);
+}
+
+for (int i = 0; i < queue_num; i++)
+{
+    queueNum[i] = i;
+    queue[i] = nfq_create_queue(handler, i, netfilterCallback, &queueNum[i]);
+    if (!queue[i])
     {
-        printf("RULE %d s %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-    }*/
-
-    for (int i = 0; i < ip_array_size; i++)
-    {
-        packet_data[i] = NULL;
-        packet_data_tail[i] = NULL;
-        packet_data_mtx[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-        packet_data_count[i] = 0;
-    }
-
-    handler = nfq_open();
-
-    if (!handler)
-    {
-        fprintf(stderr, "error during nfq_open()\n");
+        fprintf(stderr, "error during nfq_create_queue()\n");
         exit(1);
     }
 
-    // unbinding existing nf_queue handler for AF_INET (if any)
-    if (nfq_unbind_pf(handler, AF_INET) < 0)
+    if (nfq_set_mode(queue[i], NFQNL_COPY_PACKET, 0xffff) < 0)
     {
-        fprintf(stderr, "error during nfq_unbind_pf()\n");
+        fprintf(stderr, "can't set packet_copy mode\n");
         exit(1);
     }
+}
 
-    // binding nfnetlink_queue as nf_queue handler for AF_INET
-    if (nfq_bind_pf(handler, AF_INET) < 0)
-    {
-        fprintf(stderr, "error during nfq_bind_pf()\n");
-        exit(1);
-    }
+netf_fd = nfq_fd(handler);
+pthread_create(&rt, NULL, recvThread, NULL);
+pthread_create(&vt, NULL, verdictThread, NULL);
 
-    for (int i = 0; i < queue_num; i++)
-    {
-        queueNum[i] = i;
-        queue[i] = nfq_create_queue(handler, i, netfilterCallback, &queueNum[i]);
-        if (!queue[i])
-        {
-            fprintf(stderr, "error during nfq_create_queue()\n");
-            exit(1);
-        }
+// need to turn this to a daemon
+while (1)
+{
+    continue;
+}
 
-        if (nfq_set_mode(queue[i], NFQNL_COPY_PACKET, 0xffff) < 0)
-        {
-            fprintf(stderr, "can't set packet_copy mode\n");
-            exit(1);
-        }
-    }
+// clean up queues
+pthread_cancel(rt);
+pthread_cancel(vt);
 
-    netf_fd = nfq_fd(handler);
-    pthread_create(&rt, NULL, recvThread, NULL);
-    pthread_create(&vt, NULL, verdictThread, NULL);
+for (int i = 0; i < queue_num; i++)
+{
+    nfq_destroy_queue(queue[i]);
+}
 
-    // need to turn this to a daemon
-    while (1)
+nfq_close(handler);
+
+// clean up stored packet data
+for (int i = 0; i < queue_num; i++)
+{
+    tempNode = packet_data[i];
+    if (!tempNode)
     {
         continue;
     }
-
-    // clean up queues
-    pthread_cancel(rt);
-    pthread_cancel(vt);
-
-    for (int i = 0; i < queue_num; i++)
+    while (tempNode->next != NULL)
     {
-        nfq_destroy_queue(queue[i]);
+        tempNode = tempNode->next;
+        free(packet_data[i]);
+        packet_data[i] = tempNode;
     }
+}
 
-    nfq_close(handler);
-
-    // clean up stored packet data
-    for (int i = 0; i < queue_num; i++)
-    {
-        tempNode = packet_data[i];
-        if (!tempNode)
-        {
-            continue;
-        }
-        while (tempNode->next != NULL)
-        {
-            tempNode = tempNode->next;
-            free(packet_data[i]);
-            packet_data[i] = tempNode;
-        }
-    }
-
-    // free rule arrays
-    free(rule[0]);
-    free(rule[1]);
-    free(rule[2]);
-    free(rule[3]);
-    free(rule[4]);
-    free(rule[5]);
-    return 0;
+// free rule arrays
+/*free(rule[0]);
+free(rule[1]);
+free(rule[2]);
+free(rule[3]);
+free(rule[4]);
+free(rule[5]);*/
+return 0;
 }
