@@ -312,7 +312,7 @@ void *verdictThread()
         printf("MATCH ON CPU\n");
         for (int i = 0; i < ip_array_size * ruleNum; i++)
         {
-            if (rule_protocol[i % ruleNum] == 0)
+            /*if (rule_protocol[i % ruleNum] == 0)
             {
                 protocol_input[i / ruleNum] = 0;
             }
@@ -323,7 +323,7 @@ void *verdictThread()
             if (rule_d_port[i % ruleNum] == 0)
             {
                 d_port_input[i / ruleNum] = 0;
-            }
+            }*/
             test = rule_ip[i % ruleNum] == (array_ip_input[i / ruleNum] & rule_mask[i % ruleNum]);
             protocol_result = (rule_protocol[i % ruleNum] == protocol_input[i / ruleNum]);
             sport_result = (rule_s_port[i % ruleNum] == s_port_input[i / ruleNum]);
