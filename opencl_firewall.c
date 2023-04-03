@@ -55,7 +55,7 @@ static volatile int packet_data_count[queue_num];
 
 // file global for OpenCL kernel
 struct ipv4Rule *ruleList = NULL;
-int ruleNum;
+static int ruleNum;
 uint64_t *rule_ip = NULL;
 uint64_t *rule_mask = NULL;
 uint8_t *rule_protocol = NULL;
@@ -343,6 +343,7 @@ void *verdictThread()
                 verdict_buffer = 0;
             }*/
 
+            printf("AAAAAAAA\n");
             printf("Input IP %u.%u.%u.%u Proto %u sPort %u dPort %u\n", printable_ip(array_ip_input[i / ruleNum]), protocol_input[i / ruleNum], s_port_input[i / ruleNum], d_port_input[i / ruleNum]);
             printf("Rule IP %u.%u.%u.%u Proto %u sPort %u dPort %u\n", printable_ip(rule_ip[i % ruleNum]), rule_protocol[i % ruleNum], rule_s_port[i % ruleNum], rule_d_port[i % ruleNum]);
             printf("IP Match %d Proto Match %d sPort Match %d dPort Match %d\n", test, protocol_result, sport_result, dport_result);
@@ -356,8 +357,8 @@ void *verdictThread()
         {
             for (int j = 0; j < queue_multipler; j++)
             {
-                printf("%d", result[i * queue_multipler + j]);
-                // nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i * queue_multipler + j], 0, NULL);
+                // printf("%d", result[i * queue_multipler + j]);
+                //  nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i * queue_multipler + j], 0, NULL);
                 nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, NF_ACCEPT, 0, NULL);
 
                 err = pthread_mutex_lock(&packet_data_mtx[i]);
