@@ -362,13 +362,6 @@ void *verdictThread()
             protocol_result, sport_result, dport_result;
         int verdict_buffer = 0;
 
-        printf("\n");
-        for (int i = 0; i < ip_array_size; i++)
-        {
-            printf("sIP %u.%u.%u.%u dIP %u.%u.%u.%u\n", printable_ip_joined(array_ip_input[i]));
-            printf("Proto %u sPort %u dPort %u\n", protocol_input[i], s_port_input[i], d_port_input[i]);
-        }
-
         printf("MATCH ON CPU\n");
         for (int i = 0; i < ip_array_size * ruleNum; i++)
         {
