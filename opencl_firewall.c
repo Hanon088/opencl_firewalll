@@ -23,17 +23,6 @@
 #include "compare.h"
 #include "rule_loader.h"
 
-/*struct ruleAttributes
-{
-    uint64_t *ip;
-    uint64_t *mask;
-    uint8_t *protocol;
-    uint16_t *s_port;
-    uint16_t *d_port;
-    int *verdict;
-};*/
-void *rule[6];
-
 // struct to store packet data from callback
 struct callbackStruct
 {
@@ -345,13 +334,6 @@ void *verdictThread()
 
         printf("\n\n\nSTARTING OCL PREP %ld\n\n\n", ++batch_num);
 
-        printf("\n");
-        for (int i = 0; i < ruleNum; i++)
-        {
-            // printf("RULE s %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-            printf("RULE proto %d sp %u dp %u\n", rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-        }
-
         for (int i = 0; i < queue_num; i++)
         {
             tempNode = packet_data[i];
@@ -360,10 +342,6 @@ void *verdictThread()
                 // source and dest ip and masks are concatenated to 64 bits
                 ip_addr[0] = tempNode->source_ip;
                 ip_addr[1] = tempNode->dest_ip;
-                // protocol = tempNode->ip_protocol;
-                // sPort = tempNode->source_port;
-                // dPort = tempNode->dest_port;
-                // protocol = tempNode->ip_protocol;
                 printf("QUEUE %d PACKET ID: %u\n", i, tempNode->packet_id);
                 printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), tempNode->ip_protocol, tempNode->source_port, tempNode->dest_port);
 
@@ -396,8 +374,7 @@ void *verdictThread()
         for (int i = 0; i < ip_array_size * ruleNum; i++)
         {
 
-            printf("AAAAAAAA\n");
-            /*if (rule_protocol[i % ruleNum] == 0)
+            if (rule_protocol[i % ruleNum] == 0)
             {
                 protocol_input[i / ruleNum] = 0;
             }
@@ -408,14 +385,14 @@ void *verdictThread()
             if (rule_d_port[i % ruleNum] == 0)
             {
                 d_port_input[i / ruleNum] = 0;
-            }*/
+            }
             test = rule_ip[i % ruleNum] == (array_ip_input[i / ruleNum] & rule_mask[i % ruleNum]);
             protocol_result = (rule_protocol[i % ruleNum] == protocol_input[i / ruleNum]);
             sport_result = (rule_s_port[i % ruleNum] == s_port_input[i / ruleNum]);
             dport_result = (rule_d_port[i % ruleNum] == d_port_input[i / ruleNum]);
             //        printf("%d|", i / ruleNum);
             //        printf("%u.%u.%u.%u\n", printable_ip(array_ip_input[i/ruleNum]));
-            /*if (test == 1)
+            if (test == 1)
             {
                 verdict_buffer = rule_verdict[i % ruleNum];
                 i += ruleNum - i % ruleNum;
@@ -426,11 +403,7 @@ void *verdictThread()
             {
                 printf("%d", verdict_buffer);
                 verdict_buffer = 0;
-            }*/
-
-            printf("Input IP %u.%u.%u.%u Proto %u sPort %u dPort %u\n", printable_ip(array_ip_input[i / ruleNum]), protocol_input[i / ruleNum], s_port_input[i / ruleNum], d_port_input[i / ruleNum]);
-            printf("Rule IP %u.%u.%u.%u Proto %u sPort %u dPort %u\n", printable_ip(rule_ip[i % ruleNum]), rule_protocol[i % ruleNum], rule_s_port[i % ruleNum], rule_d_port[i % ruleNum]);
-            printf("IP Match %d Proto Match %d sPort Match %d dPort Match %d\n", test, protocol_result, sport_result, dport_result);
+            }
         }
         printf("\n");
 
@@ -470,12 +443,6 @@ void *verdictThread()
                 }
             }
         }
-
-        /*for (int i = 0; i < ip_array_size; i++)
-        {
-            printf("IP %u.%u.%u.%u\n", printable_ip(array_ip_input[i]));
-            printf("Proto %u sPort %u dPort %u\n", protocol_input[i], s_port_input[i], d_port_input[i]);
-        }*/
     }
     free(rule_ip);
     free(rule_mask);
@@ -554,28 +521,6 @@ int main()
     pthread_t vt, rt;
     int queueNum[queue_num];
     struct callbackStruct *tempNode;
-    /*
-    // rule = malloc(sizeof(struct ruleAttributes));
-
-    // s d ip
-    rule[0] = malloc(ruleNum * 8);
-    // s d mask
-    rule[1] = malloc(ruleNum * 8);
-    // protocol
-    rule[2] = malloc(ruleNum);
-    // sport
-    rule[3] = malloc(ruleNum * 2);
-    // dport
-    rule[4] = malloc(ruleNum * 2);
-    // verdict
-    rule[5] = malloc(ruleNum * sizeof(int));
-    prep_rules(rule[0], rule[1], rule[2], rule[3], rule[4], rule[5]);*/
-
-    /*printf("\nFROM MAIN\n");
-    for (int i = 0; i < ruleNum; i++)
-    {
-        printf("RULE %d s %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-    }*/
 
     for (int i = 0; i < ip_array_size; i++)
     {
@@ -661,12 +606,5 @@ int main()
         }
     }
 
-    // free rule arrays
-    /*free(rule[0]);
-    free(rule[1]);
-    free(rule[2]);
-    free(rule[3]);
-    free(rule[4]);
-    free(rule[5]);*/
     return 0;
 }
