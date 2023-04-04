@@ -27,6 +27,9 @@
 #include "rule_loader.h"
 #include "src/src.h"
 
+// time header for time testing
+#include <time.h>
+
 // struct to store packet data from callback
 struct callbackStruct
 {
@@ -236,6 +239,9 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 // takes data stored by callback and calls OpenCL kernel
 void *verdictThread()
 {
+    // to measur time
+    clock_t to_gpu, after_gpu;
+    double accumulated_time = 0.0, gpu_time;
 
     // local opencl variables
     cl_device_id deviceId;
@@ -391,8 +397,16 @@ void *verdictThread()
         printf("\n");
 
         printf("MATCH ON OPENCL DEVICE\n");
-        // compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
+
+        // time before packets are sent to gpu
+        to_gpu = clock();
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
+        // time after packets are sent to gpu
+        after_gpu = clock();
+        gpu_time = (double)(to_gpu - after_gpu) / CLOCKS_PER_SEC;
+        accumulated_time += gpu_time;
+        printf("GPU Time = %.0f Seconds\n", gpu_time);
+        printf("Accumulated GPU Time = %.0f Seconds\n", accumulated_time);
         for (int i = 0; i < queue_num; i++)
         {
             for (int j = 0; j < queue_multipler; j++)
