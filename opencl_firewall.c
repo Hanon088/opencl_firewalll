@@ -467,53 +467,6 @@ void *recvThread()
     return 0;
 }
 
-/*
-int prep_rules(uint64_t *rule_ip, uint64_t *rule_mask, uint8_t *rule_protocol, uint16_t *rule_s_port, uint16_t *rule_d_port, int *rule_verdict)
-{
-    uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2] __attribute__((aligned));
-    uint16_t *sPort, *dPort;
-
-    ruleList = malloc(sizeof(struct ipv4Rule));
-    ruleNum = load_rules(rule_file, ruleList);
-
-    // local buffers used to load rules
-    sAddr = malloc(ruleNum * 4);
-    dAddr = malloc(ruleNum * 4);
-    sMask = malloc(ruleNum * 4);
-    dMask = malloc(ruleNum * 4);
-    sPort = malloc(ruleNum * 2);
-    dPort = malloc(ruleNum * 2);
-
-    printf("Number of rules %d\n", ruleNum);
-    rule_list_to_arr(ruleList, sAddr, sMask, dAddr, dMask, rule_protocol, sPort, dPort, rule_verdict);
-    free_rule_list(ruleList);
-
-    /*loading procedure may be redundant but easier to modify if OpenCL arg size change, such as merging source and dest ip*/
-/*
-for (int i = 0; i < ruleNum; i++)
-{
-    printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip(sAddr[i]), printable_ip(dAddr[i]), rule_protocol[i], sPort[i], dPort[i]);
-    mergeBuff[0] = sAddr[i];
-    mergeBuff[1] = dAddr[i];
-    memcpy(&rule_ip[i], mergeBuff, 8);
-    mergeBuff[0] = sMask[i];
-    mergeBuff[1] = dMask[i];
-    memcpy(&rule_mask[i], mergeBuff, 8);
-}
-memcpy(rule_s_port, sPort, ruleNum * 2);
-memcpy(rule_d_port, dPort, ruleNum * 2);
-
-// free  local buffers
-free(sAddr);
-free(dAddr);
-free(sMask);
-free(dMask);
-free(sPort);
-free(dPort);
-return 0;
-}
-*/
-
 // only functions to load the programm
 int main()
 {
