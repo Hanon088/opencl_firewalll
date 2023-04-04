@@ -245,7 +245,7 @@ void *verdictThread()
     int *rule_verdict;
 
     uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2] __attribute__((aligned));
-    uint16_t *sPort, *dPort;
+    // uint16_t *sPort, *dPort;
 
     // packet data buffers
     int err;
@@ -273,11 +273,11 @@ void *verdictThread()
     dAddr = malloc(ruleNum * 4);
     sMask = malloc(ruleNum * 4);
     dMask = malloc(ruleNum * 4);
-    sPort = malloc(ruleNum * 2);
-    dPort = malloc(ruleNum * 2);
+    // sPort = malloc(ruleNum * 2);
+    // dPort = malloc(ruleNum * 2);
 
     printf("Number of rules %d\n", ruleNum);
-    rule_list_to_arr(ruleList, sAddr, sMask, dAddr, dMask, rule_protocol, sPort, dPort, rule_verdict);
+    rule_list_to_arr(ruleList, sAddr, sMask, dAddr, dMask, rule_protocol, rule_s_port, rule_d_port, rule_verdict);
     free_rule_list(ruleList);
 
     /*loading procedure may be redundant but easier to modify if OpenCL arg size change, such as merging source and dest ip*/
@@ -300,8 +300,8 @@ void *verdictThread()
     free(dAddr);
     free(sMask);
     free(dMask);
-    free(sPort);
-    free(dPort);
+    // free(sPort);
+    // free(dPort);
 
     // waits for packets to arrive in ALL queues
     while (1)
