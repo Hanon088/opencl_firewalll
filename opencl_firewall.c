@@ -403,10 +403,10 @@ void *verdictThread()
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
         // time after packets are sent to gpu
         after_gpu = clock();
-        gpu_time = ((double)(to_gpu - after_gpu) / CLOCKS_PER_SEC) * 1000000;
+        gpu_time = ((double)(after_gpu - to_gpu) / CLOCKS_PER_SEC) * 1000000;
         accumulated_time += gpu_time;
-        printf("GPU Time = %lf Microseconds\n", gpu_time);
-        printf("Accumulated GPU Time = %lf Microseconds\n", accumulated_time);
+        printf("GPU Time = %.2lf Microseconds\n", gpu_time);
+        printf("Accumulated GPU Time = %.2lf Microseconds\n", accumulated_time);
         for (int i = 0; i < queue_num; i++)
         {
             for (int j = 0; j < queue_multipler; j++)
