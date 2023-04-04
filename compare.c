@@ -9,19 +9,19 @@
 #include "variables.h"
 #include "compare.h"
 
-int compare(uint64_t input_ip[],
-            uint16_t input_sport[],
-            uint16_t input_dport[],
-            uint8_t input_protocol[],
-            uint64_t rule_ip[],
-            uint64_t rule_mask[],
-            uint16_t rule_sport[],
-            uint16_t rule_dport[],
-            uint8_t rule_protocol[],
-            int verdict[],
-            int result[],
-            int ip_arr_size,
-            int rule_arr_size)
+int compare_old(uint64_t input_ip[],
+                uint16_t input_sport[],
+                uint16_t input_dport[],
+                uint8_t input_protocol[],
+                uint64_t rule_ip[],
+                uint64_t rule_mask[],
+                uint16_t rule_sport[],
+                uint16_t rule_dport[],
+                uint8_t rule_protocol[],
+                int verdict[],
+                int result[],
+                int ip_arr_size,
+                int rule_arr_size)
 {
     // opencl structures
     cl_device_id deviceId;

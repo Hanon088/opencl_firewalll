@@ -28,11 +28,12 @@ cl_device_id create_device_cl()
 cl_program create_program_cl(cl_context clContext, cl_device_id deviceId, const char *filename)
 {
     // read file and create cl_program
+    cl_int err;
+    print_err(err);
     cl_program program;
     FILE *program_handle;
     char *program_buffer, *program_log;
     size_t program_size, log_size;
-    int err;
 
     program_handle = fopen(filename, "r");
     if (program_handle == NULL)

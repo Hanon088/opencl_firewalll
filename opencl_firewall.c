@@ -1,3 +1,4 @@
+// c and linux headers
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -17,6 +18,9 @@
 #include <libnetfilter_queue/libnetfilter_queue_ipv4.h>
 #include <libnetfilter_queue/libnetfilter_queue_tcp.h>
 #include <libnetfilter_queue/libnetfilter_queue_udp.h>
+
+// opencl headers
+#include <CL/cl.h>
 
 // custom headers
 #include "variables.h"
@@ -233,6 +237,12 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 void *verdictThread()
 {
 
+    // local opencl variables
+    cl_device_id deviceId;
+    cl_context context;
+    cl_program program;
+    cl_int err;
+
     // rules buffers
     uint64_t *rule_ip;
     uint64_t *rule_mask;
@@ -252,6 +262,7 @@ void *verdictThread()
     uint8_t protocol_input_buff[queue_num][queue_multipler];
     uint16_t s_port_input_buff[queue_num][queue_multipler], d_port_input_buff[queue_num][queue_multipler];
 
+    // prep rules
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(rule_file, ruleList);
 
@@ -270,6 +281,18 @@ void *verdictThread()
     {
         printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
     }
+
+    // prep opencl buffers
+    deviceId = create_device_cl();
+    // create context
+    context = clCreateContext(NULL, 1, &deviceId, NULL, NULL, &err);
+    print_err(err);
+
+    // build program;
+    program = create_program_cl(context, deviceId, source);
+
+    // create all buffer Rule(with value) and input
+    declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
 
     // waits for packets to arrive in ALL queues
     while (program_running)
@@ -368,7 +391,8 @@ void *verdictThread()
         printf("\n");
 
         printf("MATCH ON OPENCL DEVICE\n");
-        compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
+        // compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
+        compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
         for (int i = 0; i < queue_num; i++)
         {
             for (int j = 0; j < queue_multipler; j++)
@@ -403,6 +427,7 @@ void *verdictThread()
             }
         }
     }
+    release_buffer(&program, &context);
     free(rule_ip);
     free(rule_mask);
     free(rule_protocol);
