@@ -24,7 +24,6 @@
 
 // custom headers
 #include "variables.h"
-#include "compare.h"
 #include "rule_loader.h"
 #include "src/src.h"
 
