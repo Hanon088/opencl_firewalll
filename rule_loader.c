@@ -152,3 +152,35 @@ int rule_list_to_arr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask
     }
     return 0;
 }
+
+int rule_list_to_arr_joined(struct ipv4Rule *ruleList, uint64_t *ip_addr, uint64_t *mask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr)
+{
+    struct ipv4Rule *temp = ruleList;
+    int count = 0;
+    uint32_t ip_buff[2], mask_buff[2];
+    while (1)
+    {
+
+        memcpy(&ip_buff[0], &temp->source_ip, 4);
+        memcpy(&ip_buff[1], &temp->dest_ip, 4);
+        memcpy(&mask_buff[0], &temp->source_ip_mask, 4);
+        memcpy(&mask_buff[1], &temp->dest_ip_mask, 4);
+
+        memcpy(&ip_addr[count], ip_buff, 8);
+        memcpy(&mask[count], mask_buff, 8);
+
+        memcpy(&protoArr[count], &temp->ip_protocol, 1);
+        memcpy(&sPortArr[count], &temp->source_port, 2);
+        memcpy(&dPortArr[count], &temp->dest_port, 2);
+
+        memcpy(&verdictArr[count], &temp->verdict, sizeof(int));
+
+        if (!(temp->next))
+        {
+            break;
+        }
+        count++;
+        temp = temp->next;
+    }
+    return 0;
+}
