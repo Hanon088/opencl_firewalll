@@ -40,6 +40,9 @@ struct callbackStruct
     if it turns out libnetfilter_queue doesn't hold the packet*/
 };
 
+// file global for thread loops
+volatile int program_running = 1;
+
 // file global for libnetfilter_queue
 long int packet_count = 0;
 long int batch_num = 0;
@@ -56,12 +59,6 @@ static volatile int packet_data_count[queue_num];
 // file global for OpenCL kernel
 struct ipv4Rule *ruleList = NULL;
 static int ruleNum;
-/*uint64_t *rule_ip = NULL;
-uint64_t *rule_mask = NULL;
-uint8_t *rule_protocol = NULL;
-uint16_t *rule_s_port = NULL;
-uint16_t *rule_d_port = NULL;
-int *rule_verdict = NULL;*/
 int result[ip_array_size];
 
 // callback function for libnetfilter_queue
@@ -275,7 +272,7 @@ void *verdictThread()
     }
 
     // waits for packets to arrive in ALL queues
-    while (1)
+    while (program_running)
     {
         for (int i = 0; i < queue_num; i++)
         {
@@ -291,7 +288,7 @@ void *verdictThread()
         continue;
     }
 
-    while (1)
+    while (program_running)
     {
         for (int i = 0; i < queue_num; i++)
         {
@@ -419,7 +416,7 @@ void *recvThread()
 {
     int rcv_len;
 
-    while (1)
+    while (program_running)
     {
         rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
         if (rcv_len < 0)
