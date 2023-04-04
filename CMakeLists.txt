@@ -9,6 +9,9 @@ include_directories(.)
 
 add_executable(compare comparewithmask.c src/PrintErr.c src/CreateOCLStructure/DeviceCL.c rule_loader.c variables.c)
 
+add_executable(compare_refactored compare_main.c src/PrintErr.c src/CreateOCLStructure/DeviceCL.c rule_loader.c variables.c src/CreateOCLStructure/Buffer.c src/CreateOCLStructure/Compare.c)
+
 find_package(OpenCL REQUIRED)
 
 target_link_libraries(compare OpenCL::OpenCL)
+target_link_libraries(compare_refactored OpenCL::OpenCL)

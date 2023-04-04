@@ -45,7 +45,9 @@ __kernel void compare(__global ulong *input_ip,
        if(local_rule_sport == 0){local_input_sport = 0;}
        if(local_rule_dport == 0){local_input_dport = 0;}
 
-       local_output = ((local_input_ip & local_rule_mask) == local_rule_ip) & (local_rule_protocol == local_input_protocol) & (local_rule_sport == local_input_sport) & (local_rule_dport == local_input_dport);
+       local_output = ((local_input_ip & local_rule_mask) == local_rule_ip)
+        & (local_rule_protocol == local_input_protocol) & (local_rule_sport == local_input_sport)
+         & (local_rule_dport == local_input_dport);
        result[packet_index] = local_output;
 
 }
