@@ -4,6 +4,22 @@
 #define queue_num 6
 #define queue_multipler 2
 
+#define printable_ip(addr)           \
+    ((unsigned char *)&addr)[3],     \
+        ((unsigned char *)&addr)[2], \
+        ((unsigned char *)&addr)[1], \
+        ((unsigned char *)&addr)[0]
+
+#define printable_ip_joined(addr)    \
+    ((unsigned char *)&addr)[3],     \
+        ((unsigned char *)&addr)[2], \
+        ((unsigned char *)&addr)[1], \
+        ((unsigned char *)&addr)[0], \
+        ((unsigned char *)&addr)[7], \
+        ((unsigned char *)&addr)[6], \
+        ((unsigned char *)&addr)[5], \
+        ((unsigned char *)&addr)[4]
+
 extern const char *source;
 extern const char *func_compare;
 extern const char *func_sync;
@@ -23,19 +39,3 @@ extern cl_mem rule_ip_buffer,
     output_buffer,
     result_buffer,
     rule_size_buffer;
-
-#define printable_ip(addr)           \
-    ((unsigned char *)&addr)[3],     \
-        ((unsigned char *)&addr)[2], \
-        ((unsigned char *)&addr)[1], \
-        ((unsigned char *)&addr)[0]
-
-#define printable_ip_joined(addr)    \
-    ((unsigned char *)&addr)[3],     \
-        ((unsigned char *)&addr)[2], \
-        ((unsigned char *)&addr)[1], \
-        ((unsigned char *)&addr)[0], \
-        ((unsigned char *)&addr)[7], \
-        ((unsigned char *)&addr)[6], \
-        ((unsigned char *)&addr)[5], \
-        ((unsigned char *)&addr)[4]
