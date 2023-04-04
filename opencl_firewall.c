@@ -242,7 +242,7 @@ void *verdictThread()
     cl_device_id deviceId;
     cl_context context;
     cl_program program;
-    cl_int err;
+    cl_int ocl_err;
 
     // rules buffers
     uint64_t *rule_ip;
@@ -253,7 +253,7 @@ void *verdictThread()
     int *rule_verdict;
 
     // packet data buffers
-    int err;
+    int mutex_err;
     uint32_t ip_addr[2] __attribute__((aligned));
     struct callbackStruct *tempNode = NULL;
     uint64_t array_ip_input[ip_array_size];
@@ -286,8 +286,8 @@ void *verdictThread()
     // prep opencl buffers
     deviceId = create_device_cl();
     // create context
-    context = clCreateContext(NULL, 1, &deviceId, NULL, NULL, &err);
-    print_err(err);
+    context = clCreateContext(NULL, 1, &deviceId, NULL, NULL, &ocl_err);
+    print_err(ocl_err);
 
     // build program;
     program = create_program_cl(context, deviceId, source);
@@ -402,8 +402,8 @@ void *verdictThread()
                 nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i * queue_multipler + j], 0, NULL);
                 // nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, NF_ACCEPT, 0, NULL);
 
-                err = pthread_mutex_lock(&packet_data_mtx[i]);
-                if (err != 0)
+                mutex_err = pthread_mutex_lock(&packet_data_mtx[i]);
+                if (mutex_err != 0)
                 {
                     fprintf(stderr, "pthread_mutex_lock fails\n");
                     exit(1);
@@ -419,8 +419,8 @@ void *verdictThread()
                     free(tempNode);
                     packet_data_count[i]--;
                 }
-                err = pthread_mutex_unlock(&packet_data_mtx[i]);
-                if (err != 0)
+                mutex_err = pthread_mutex_unlock(&packet_data_mtx[i]);
+                if (mutex_err != 0)
                 {
                     fprintf(stderr, "pthread_mutex_unlock fails\n");
                     exit(1);
