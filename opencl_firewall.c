@@ -26,6 +26,7 @@
 #include "variables.h"
 #include "compare.h"
 #include "rule_loader.h"
+#include "src/src.h"
 
 // struct to store packet data from callback
 struct callbackStruct
