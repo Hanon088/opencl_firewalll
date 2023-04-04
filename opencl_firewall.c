@@ -235,8 +235,8 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 // takes data stored by callback and calls OpenCL kernel
 void *verdictThread()
 {
-    // struct ruleAttributes *rule = (struct ruleAttributes *)args;
 
+    // rules buffers
     uint64_t *rule_ip;
     uint64_t *rule_mask;
     uint8_t *rule_protocol;
@@ -246,6 +246,17 @@ void *verdictThread()
 
     uint32_t *sAddr, *dAddr, *sMask, *dMask, mergeBuff[2] __attribute__((aligned));
     uint16_t *sPort, *dPort;
+
+    // packet data buffers
+    int err;
+    uint32_t ip_addr[2] __attribute__((aligned));
+    struct callbackStruct *tempNode = NULL;
+    uint64_t array_ip_input[ip_array_size];
+    uint8_t protocol_input[ip_array_size];
+    uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
+    uint64_t array_ip_input_buff[queue_num][queue_multipler];
+    uint8_t protocol_input_buff[queue_num][queue_multipler];
+    uint16_t s_port_input_buff[queue_num][queue_multipler], d_port_input_buff[queue_num][queue_multipler];
 
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(rule_file, ruleList);
@@ -291,18 +302,6 @@ void *verdictThread()
     free(dMask);
     free(sPort);
     free(dPort);
-
-    int err;
-    uint32_t ip_addr[2] __attribute__((aligned));
-    // uint16_t sPort, dPort;
-    // uint8_t protocol;
-    struct callbackStruct *tempNode = NULL;
-    uint64_t array_ip_input[ip_array_size];
-    uint8_t protocol_input[ip_array_size];
-    uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
-    uint64_t array_ip_input_buff[queue_num][queue_multipler];
-    uint8_t protocol_input_buff[queue_num][queue_multipler];
-    uint16_t s_port_input_buff[queue_num][queue_multipler], d_port_input_buff[queue_num][queue_multipler];
 
     // waits for packets to arrive in ALL queues
     while (1)
