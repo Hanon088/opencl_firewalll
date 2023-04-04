@@ -292,8 +292,8 @@ void *verdictThread()
         mergeBuff[1] = dMask[i];
         memcpy(&rule_mask[i], mergeBuff, 8);
     }
-    memcpy(rule_s_port, sPort, ruleNum * 2);
-    memcpy(rule_d_port, dPort, ruleNum * 2);
+    // memcpy(rule_s_port, sPort, ruleNum * 2);
+    // memcpy(rule_d_port, dPort, ruleNum * 2);
 
     // free  local buffers
     free(sAddr);
