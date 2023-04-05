@@ -518,7 +518,7 @@ int main()
             fprintf(stderr, "can't set packet_copy mode\n");
             exit(1);
         }
-        if (nfq_set_queue_maxlen(queue[i], (uint32_t)4294967296) < 0)
+        if (nfq_set_queue_maxlen(queue[i], (uint32_t)0xffffffff) < 0)
         {
             fprintf(stderr, "can't set queue maxlen\n");
             exit(1);
