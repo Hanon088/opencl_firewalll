@@ -448,7 +448,7 @@ void *verdictThread()
     free(rule_s_port);
     free(rule_d_port);
     free(rule_verdict);
-    verdict_running = -1
+    verdict_running = -1;
 }
 
 // connect to libnetfilter_queue via recv, could this be a bottleneck?
