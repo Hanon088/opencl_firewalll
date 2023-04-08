@@ -537,9 +537,9 @@ int main()
         if ((batch_num >= 10) && recv_running && verdict_running)
         {
             recv_running = 0;
-            pthread_join(rt);
+            pthread_join(rt, NULL);
             verdict_running = 0;
-            pthread_join(vt);
+            pthread_join(vt, NULL);
             break;
         }
     }
