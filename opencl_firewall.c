@@ -534,7 +534,7 @@ int main()
     // need to turn this to a daemon
     while (1)
     {
-        if ((batch_num >= 10) && recv_running && verdict_running)
+        if ((batch_num >= 100) && recv_running && verdict_running)
         {
             recv_running = 0;
             pthread_join(rt, NULL);
