@@ -529,7 +529,7 @@ int main()
 
     netf_fd = nfq_fd(handler);
     pthread_create(&rt, NULL, recvThread, NULL);
-    pthread_create(&vt, NULL, verdictThread, NULL);
+    // pthread_create(&vt, NULL, verdictThread, NULL);
 
     // need to turn this to a daemon
     while (1)
