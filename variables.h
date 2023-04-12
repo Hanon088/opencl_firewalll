@@ -1,8 +1,8 @@
 #include <CL/cl.h>
 
-#define ip_array_size 36
+#define ip_array_size 42
 #define queue_num 6
-#define queue_multipler 6
+#define queue_multipler 7
 
 #define printable_ip(addr)           \
     ((unsigned char *)&addr)[3],     \
