@@ -1,6 +1,6 @@
 #include <CL/cl.h>
 
-#define ip_array_size 96
+#define ip_array_size 96L
 #define queue_num 6
 #define queue_multipler 16
 
