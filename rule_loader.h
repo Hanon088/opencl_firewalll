@@ -19,15 +19,17 @@ struct ipv4Rule
     // masks to convert the packets
     uint32_t source_ip_mask;
     uint32_t dest_ip_mask;
-
+    /*
     uint16_t source_port_mask;
     uint16_t dest_port_mask;
     uint8_t ip_protocol_mask;
+    */
 
     int verdict;
     struct ipv4Rule *next;
 };
 
 int load_rules(const char *filename, struct ipv4Rule *ruleList);
-int freeRules(struct ipv4Rule *ruleList);
-int ruleListToArr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t *dMask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr);
+int free_rule_list(struct ipv4Rule *ruleList);
+int rule_list_to_arr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t *dMask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr);
+int rule_list_to_arr_joined(struct ipv4Rule *ruleList, uint64_t *ip_addr, uint64_t *mask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr);

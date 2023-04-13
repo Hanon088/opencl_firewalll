@@ -6,10 +6,6 @@
 #include "variables.h"
 #include "rule_loader.h"
 
-// struct ipv4Rule *ruleList = NULL;
-//  char *ruleFileName = "C:\\Users\\Jack\\Documents\\Year 4 Project\\opencl_firewalll\\rules.txt";
-//   char *ruleFileName = "rules.txt";
-
 int parseIntoIPv4(char *ipStr, uint32_t *binIP)
 {
     int bufferInt[4];
@@ -32,14 +28,9 @@ int parseIntoIPv4(char *ipStr, uint32_t *binIP)
 
 int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
 {
-
-    /*
-    source      mask        dest    mask     protocol  sPort  dPort  verdict
-    192.168.0.0 255.255.0.0 0.0.0.0 0.0.0.0  0         0      0      1       ;
-    */
     char sourceIP[16], sourceMask[16], destIP[16], destMask[16];
     int sPort, dPort, protocol, verdict;
-    sscanf(ruleString, "%s %s %s %s %d %d %d %d", sourceIP, sourceMask, destIP, destMask, &sPort, &dPort, &protocol, &verdict);
+    sscanf(ruleString, "%s %s %s %s %d %d %d %d", sourceIP, sourceMask, destIP, destMask, &protocol, &sPort, &dPort, &verdict);
     parseIntoIPv4(sourceIP, &(ruleAddr->source_ip));
     parseIntoIPv4(sourceMask, &(ruleAddr->source_ip_mask));
     parseIntoIPv4(destIP, &(ruleAddr->dest_ip));
@@ -52,9 +43,9 @@ int parseRule(char *ruleString, struct ipv4Rule *ruleAddr)
 
     // assumes masks to be the data itself, for now
     // masks are use to compare cases such as port=ALL
-    ruleAddr->source_port_mask = ruleAddr->source_port;
+    /*ruleAddr->source_port_mask = ruleAddr->source_port;
     ruleAddr->dest_port_mask = ruleAddr->dest_port_mask;
-    ruleAddr->ip_protocol_mask = ruleAddr->ip_protocol;
+    ruleAddr->ip_protocol_mask = ruleAddr->ip_protocol;*/
 
     return 0;
 }
@@ -120,7 +111,7 @@ int load_rules(const char *filename, struct ipv4Rule *ruleList)
     return ruleNum;
 }
 
-int freeRules(struct ipv4Rule *ruleList)
+int free_rule_list(struct ipv4Rule *ruleList)
 {
     struct ipv4Rule *temp = ruleList;
 
@@ -133,16 +124,49 @@ int freeRules(struct ipv4Rule *ruleList)
     return 0;
 }
 
-int ruleListToArr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t *dMask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr)
+int rule_list_to_arr(struct ipv4Rule *ruleList, uint32_t *sAddr, uint32_t *sMask, uint32_t *dAddr, uint32_t *dMask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr)
 {
     struct ipv4Rule *temp = ruleList;
     int count = 0;
     while (1)
     {
+
         memcpy(&sAddr[count], &temp->source_ip, 4);
         memcpy(&dAddr[count], &temp->dest_ip, 4);
         memcpy(&sMask[count], &temp->source_ip_mask, 4);
         memcpy(&dMask[count], &temp->dest_ip_mask, 4);
+
+        memcpy(&protoArr[count], &temp->ip_protocol, 1);
+        memcpy(&sPortArr[count], &temp->source_port, 2);
+        memcpy(&dPortArr[count], &temp->dest_port, 2);
+
+        memcpy(&verdictArr[count], &temp->verdict, sizeof(int));
+
+        if (!(temp->next))
+        {
+            break;
+        }
+        count++;
+        temp = temp->next;
+    }
+    return 0;
+}
+
+int rule_list_to_arr_joined(struct ipv4Rule *ruleList, uint64_t *ip_addr, uint64_t *mask, uint8_t *protoArr, uint16_t *sPortArr, uint16_t *dPortArr, int *verdictArr)
+{
+    struct ipv4Rule *temp = ruleList;
+    int count = 0;
+    uint32_t ip_buff[2], mask_buff[2];
+    while (1)
+    {
+
+        memcpy(&ip_buff[0], &temp->source_ip, 4);
+        memcpy(&ip_buff[1], &temp->dest_ip, 4);
+        memcpy(&mask_buff[0], &temp->source_ip_mask, 4);
+        memcpy(&mask_buff[1], &temp->dest_ip_mask, 4);
+
+        memcpy(&ip_addr[count], ip_buff, 8);
+        memcpy(&mask[count], mask_buff, 8);
 
         memcpy(&protoArr[count], &temp->ip_protocol, 1);
         memcpy(&sPortArr[count], &temp->source_port, 2);
