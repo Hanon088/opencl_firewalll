@@ -272,7 +272,6 @@ int main()
         printf("RULE %d s %u.%u.%u.%u d %u.%u.%u.%u sm %u.%u.%u.%u dm %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), printable_ip_joined(rule_mask[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
     }
     int int_verdict_buffer = 0;
-    int test, protocol_result, sport_result, dport_result;
     for (int i = 0; i < ip_array_size * ruleNum; i++)
     {
 
