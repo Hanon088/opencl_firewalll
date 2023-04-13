@@ -287,12 +287,12 @@ int main()
         {
             input_dport[i / ruleNum] = 0;
         }
-        test = rule_ip[i % ruleNum] == (array_ip_input[i / ruleNum] & rule_mask[i % ruleNum]);
+        test = rule_ip[i % ruleNum] == (input_ip[i / ruleNum] & rule_mask[i % ruleNum]);
         protocol_result = (rule_protocol[i % ruleNum] == input_protocol[i / ruleNum]);
         sport_result = (rule_s_port[i % ruleNum] == input_sport[i / ruleNum]);
         dport_result = (rule_d_port[i % ruleNum] == input_dport[i / ruleNum]);
         //        printf("%d|", i / ruleNum);
-        //        printf("%u.%u.%u.%u\n", printable_ip(array_ip_input[i/ruleNum]));
+        //        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
         if (test == 1)
         {
             verdict_buffer = rule_verdict[i % ruleNum];
