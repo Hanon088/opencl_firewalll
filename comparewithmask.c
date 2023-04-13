@@ -316,5 +316,10 @@ int main()
         }
         printf(" | %d\n", j);
     }
-    freeRules(ruleList);
+    free(rule_ip);
+    free(rule_mask);
+    free(rule_protocol);
+    free(rule_s_port);
+    free(rule_d_port);
+    free(rule_verdict);
 }
