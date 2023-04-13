@@ -309,7 +309,7 @@ int main()
     printf("\n");
     for (int j = 0; j < 10; j++)
     {
-        compare_old(input_ip, input_sport, input_dport, input_protocol, rule_ip, rule_mask, sPort, dPort, protocols, tempVerdict, result, ip_array_size, ruleNum);
+        compare_old(input_ip, input_sport, input_dport, input_protocol, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
         for (int i = 0; i < sizeof(result) / sizeof(int); i++)
         {
             printf("%d", result[i]);
