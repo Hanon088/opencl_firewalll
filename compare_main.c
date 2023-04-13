@@ -10,12 +10,6 @@
 #include "variables.h"
 #include "rule_loader.h"
 
-#define printable_ip(addr)           \
-    ((unsigned char *)&addr)[3],     \
-        ((unsigned char *)&addr)[2], \
-        ((unsigned char *)&addr)[1], \
-        ((unsigned char *)&addr)[0]
-
 int main()
 {
     uint32_t binary_ip; // input ip
@@ -160,7 +154,13 @@ int main()
         }
         printf(" | %d\n", j);
     }
-    freeRules(ruleList);
+
     // release all resources
+    free(rule_ip);
+    free(rule_mask);
+    free(rule_protocol);
+    free(rule_s_port);
+    free(rule_d_port);
+    free(rule_verdict);
     release_buffer(&program, &context);
 }
