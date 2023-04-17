@@ -300,7 +300,7 @@ void *verdictThread()
     // create all buffer Rule(with value) and input
     declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
 
-    // waits for packets to arrive in ALL queues
+    /*// waits for packets to arrive in ALL queues
     while (verdict_running)
     {
         for (int i = 0; i < queue_num; i++)
@@ -440,7 +440,7 @@ void *verdictThread()
                 }
             }
         }
-    }
+    }*/
     release_buffer(&program, &context);
     free(rule_ip);
     free(rule_mask);
