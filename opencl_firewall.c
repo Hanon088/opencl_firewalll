@@ -455,7 +455,8 @@ void *verdictThread()
 void *recvThread()
 {
     int rcv_len;
-
+    pthread_t vt;
+    pthread_create(&vt, NULL, verdictThread, NULL);
     while (recv_running)
     {
         rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
@@ -464,6 +465,8 @@ void *recvThread()
         nfq_handle_packet(handler, buf, rcv_len);
     }
     recv_running = -1;
+    verdict_running = 0;
+    pthread_join(vt, NULL);
     return 0;
 }
 
@@ -471,7 +474,7 @@ void *recvThread()
 int main()
 {
     struct nfq_q_handle *queue[queue_num];
-    pthread_t vt, rt;
+    pthread_t rt;
     int queueNum[queue_num];
     struct callbackStruct *tempNode;
 
@@ -529,7 +532,7 @@ int main()
 
     netf_fd = nfq_fd(handler);
     pthread_create(&rt, NULL, recvThread, NULL);
-    pthread_create(&vt, NULL, verdictThread, NULL);
+    // pthread_create(&vt, NULL, verdictThread, NULL);
 
     // need to turn this to a daemon
     while (1)
@@ -538,8 +541,8 @@ int main()
         {
             recv_running = 0;
             pthread_join(rt, NULL);
-            verdict_running = 0;
-            pthread_join(vt, NULL);
+            /*verdict_running = 0;
+            pthread_join(vt, NULL);*/
             break;
         }
     }
