@@ -47,6 +47,11 @@ struct callbackStruct
     if it turns out libnetfilter_queue doesn't hold the packet*/
 };
 
+// to measure time for the program
+clock_t program_start, program_end, recv_thread_end;
+clock_t verdict_loop_start, verdict_thread_end;
+clock_t rule_load_start, rule_load_end, cl_buff_start, cl_buff_end;
+
 // file global for thread loops
 volatile int recv_running = 1, verdict_running = 1;
 
@@ -268,6 +273,8 @@ void *verdictThread()
     uint8_t protocol_input_buff[queue_num][queue_multipler];
     uint16_t s_port_input_buff[queue_num][queue_multipler], d_port_input_buff[queue_num][queue_multipler];
 
+    rule_load_start = clock();
+
     // prep rules
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(rule_file, ruleList);
@@ -283,10 +290,12 @@ void *verdictThread()
     rule_list_to_arr_joined(ruleList, rule_ip, rule_mask, rule_protocol, rule_s_port, rule_d_port, rule_verdict);
     free_rule_list(ruleList);
 
-    for (int i = 0; i < ruleNum; i++)
+    rule_load_end = clock();
+
+    /*for (int i = 0; i < ruleNum; i++)
     {
         printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-    }
+    }*/
 
     // prep opencl buffers
     deviceId = create_device_cl();
@@ -300,6 +309,7 @@ void *verdictThread()
     // create all buffer Rule(with value) and input
     declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
 
+    verdict_loop_start = clock();
     // waits for packets to arrive in ALL queues
     while (verdict_running)
     {
@@ -338,8 +348,8 @@ void *verdictThread()
                 // source and dest ip and masks are concatenated to 64 bits
                 ip_addr[0] = tempNode->source_ip;
                 ip_addr[1] = tempNode->dest_ip;
-                printf("QUEUE %d PACKET ID: %u\n", i, tempNode->packet_id);
-                printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), tempNode->ip_protocol, tempNode->source_port, tempNode->dest_port);
+                // printf("QUEUE %d PACKET ID: %u\n", i, tempNode->packet_id);
+                // printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), tempNode->ip_protocol, tempNode->source_port, tempNode->dest_port);
 
                 memcpy(&array_ip_input_buff[i][j], ip_addr, 8);
                 protocol_input_buff[i][j] = tempNode->ip_protocol;
@@ -350,12 +360,12 @@ void *verdictThread()
         }
 
         // can be removed and write to 2d array and read as 1d from opencl when match on cpu is removed
-        memcpy(array_ip_input, array_ip_input_buff, ip_array_size * 8);
+        /*memcpy(array_ip_input, array_ip_input_buff, ip_array_size * 8);
         memcpy(protocol_input, protocol_input_buff, ip_array_size * 1);
         memcpy(s_port_input, s_port_input_buff, ip_array_size * 2);
-        memcpy(d_port_input, d_port_input_buff, ip_array_size * 2);
+        memcpy(d_port_input, d_port_input_buff, ip_array_size * 2);*/
         // check rule_ip ip on cpu, can be removed later
-        int test,
+        /*int test,
             protocol_result, sport_result, dport_result;
         int verdict_buffer = 0;
 
@@ -394,7 +404,7 @@ void *verdictThread()
                 verdict_buffer = 0;
             }
         }
-        printf("\n");
+        printf("\n");*/
 
         printf("MATCH ON OPENCL DEVICE\n");
 
@@ -449,14 +459,13 @@ void *verdictThread()
     free(rule_d_port);
     free(rule_verdict);
     verdict_running = -1;
+    verdict_thread_end = clock();
 }
 
 // connect to libnetfilter_queue via recv, could this be a bottleneck?
 void *recvThread()
 {
     int rcv_len;
-    /*pthread_t vt;
-    pthread_create(&vt, NULL, verdictThread, NULL);*/
     while (recv_running)
     {
         rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
@@ -465,17 +474,13 @@ void *recvThread()
         nfq_handle_packet(handler, buf, rcv_len);
     }
     recv_running = -1;
-    /*verdict_running = 0;
-    pthread_join(vt, NULL);*/
+    recv_thread_end = clock();
     return 0;
 }
 
 // only functions to load the programm
 int main()
 {
-
-    // int rcv_len;
-
     struct nfq_q_handle *queue[queue_num];
     pthread_t vt, rt;
     int queueNum[queue_num];
@@ -534,18 +539,12 @@ int main()
     }
 
     netf_fd = nfq_fd(handler);
+
+    program_start = clock();
     pthread_create(&rt, NULL, recvThread, NULL);
     pthread_create(&vt, NULL, verdictThread, NULL);
 
     // need to turn this to a daemon
-
-    /*while (recv_running)
-    {
-        rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
-        if (rcv_len < 0)
-            continue;
-        nfq_handle_packet(handler, buf, rcv_len);
-    }*/
 
     while (1)
     {
@@ -559,9 +558,7 @@ int main()
         }
     }
 
-    // clean up queues
-    // pthread_cancel(rt);
-    // pthread_cancel(vt);
+    program_end = clock();
 
     for (int i = 0; i < queue_num; i++)
     {
