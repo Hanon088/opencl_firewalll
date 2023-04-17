@@ -298,7 +298,7 @@ void *verdictThread()
     program = create_program_cl(context, deviceId, source);
 
     // create all buffer Rule(with value) and input
-    declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
+    // declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
 
     /*// waits for packets to arrive in ALL queues
     while (verdict_running)
@@ -441,7 +441,7 @@ void *verdictThread()
             }
         }
     }*/
-    release_buffer(&program, &context);
+    // release_buffer(&program, &context);
     free(rule_ip);
     free(rule_mask);
     free(rule_protocol);
