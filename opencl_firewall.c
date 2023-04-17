@@ -298,9 +298,9 @@ void *verdictThread()
     program = create_program_cl(context, deviceId, source);
 
     // create all buffer Rule(with value) and input
-    // declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
+    declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
 
-    /*// waits for packets to arrive in ALL queues
+    // waits for packets to arrive in ALL queues
     while (verdict_running)
     {
         for (int i = 0; i < queue_num; i++)
@@ -440,8 +440,8 @@ void *verdictThread()
                 }
             }
         }
-    }*/
-    // release_buffer(&program, &context);
+    }
+    release_buffer(&program, &context);
     free(rule_ip);
     free(rule_mask);
     free(rule_protocol);
@@ -534,18 +534,18 @@ int main()
     }
 
     netf_fd = nfq_fd(handler);
-    // pthread_create(&rt, NULL, recvThread, NULL);
-    //  pthread_create(&vt, NULL, verdictThread, NULL);
+    pthread_create(&rt, NULL, recvThread, NULL);
+    pthread_create(&vt, NULL, verdictThread, NULL);
 
     // need to turn this to a daemon
 
-    while (recv_running)
+    /*while (recv_running)
     {
         rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
         if (rcv_len < 0)
             continue;
         nfq_handle_packet(handler, buf, rcv_len);
-    }
+    }*/
 
     while (1)
     {
@@ -553,8 +553,8 @@ int main()
         {
             recv_running = 0;
             pthread_join(rt, NULL);
-            /*verdict_running = 0;
-            pthread_join(vt, NULL);*/
+            verdict_running = 0;
+            pthread_join(vt, NULL);
             break;
         }
     }
