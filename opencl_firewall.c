@@ -459,7 +459,7 @@ int main()
     int queueNum[queue_num];
     struct callbackStruct *tempNode;
 
-    for (int i = 0; i < ip_array_size; i++)
+    for (int i = 0; i < queue_num; i++)
     {
         packet_data[i] = NULL;
         packet_data_tail[i] = NULL;
