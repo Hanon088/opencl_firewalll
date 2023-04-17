@@ -473,6 +473,9 @@ void *recvThread()
 // only functions to load the programm
 int main()
 {
+
+    int rcv_len;
+
     struct nfq_q_handle *queue[queue_num];
     pthread_t vt, rt;
     int queueNum[queue_num];
@@ -531,10 +534,19 @@ int main()
     }
 
     netf_fd = nfq_fd(handler);
-    pthread_create(&rt, NULL, recvThread, NULL);
-    // pthread_create(&vt, NULL, verdictThread, NULL);
+    // pthread_create(&rt, NULL, recvThread, NULL);
+    //  pthread_create(&vt, NULL, verdictThread, NULL);
 
     // need to turn this to a daemon
+
+    while (recv_running)
+    {
+        rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
+        if (rcv_len < 0)
+            continue;
+        nfq_handle_packet(handler, buf, rcv_len);
+    }
+
     while (1)
     {
         if ((batch_num >= 100) && recv_running && verdict_running)
