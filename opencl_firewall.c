@@ -287,6 +287,7 @@ void *verdictThread()
     rule_verdict = malloc(ruleNum * sizeof(int));
 
     printf("Number of rules %d\n", ruleNum);
+    printf("Queue Shape %d Queue x %d Packets Per Queue\n", queue_num, queue_multipler);
     rule_list_to_arr_joined(ruleList, rule_ip, rule_mask, rule_protocol, rule_s_port, rule_d_port, rule_verdict);
     free_rule_list(ruleList);
 
