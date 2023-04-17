@@ -474,7 +474,7 @@ void *recvThread()
 int main()
 {
 
-    int rcv_len;
+    // int rcv_len;
 
     struct nfq_q_handle *queue[queue_num];
     pthread_t vt, rt;
