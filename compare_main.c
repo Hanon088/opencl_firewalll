@@ -115,14 +115,14 @@ int main()
         //        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
         if (test == 1)
         {
-            verdict_buffer = rule_verdict[i % ruleNum];
+            int_verdict_buffer = rule_verdict[i % ruleNum];
             i += ruleNum - i % ruleNum;
-            printf("%d", verdict_buffer);
+            printf("%d", int_verdict_buffer);
             verdict_buffer = 0;
         }
         if (i % ruleNum == ruleNum - 1)
         {
-            printf("%d", verdict_buffer);
+            printf("%d", int_verdict_buffer);
             verdict_buffer = 0;
         }
     }
