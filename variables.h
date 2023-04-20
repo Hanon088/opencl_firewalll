@@ -1,4 +1,5 @@
-#define ip_array_size 20
+#define ip_array_size 12
+//max 2031616 packet*rule
 #include <CL/cl.h>
 extern const char *source;
 extern const char *func_compare;
