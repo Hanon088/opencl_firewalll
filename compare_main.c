@@ -92,6 +92,7 @@ int main()
         printf("RULE %d s %u.%u.%u.%u d %u.%u.%u.%u sm %u.%u.%u.%u dm %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), printable_ip_joined(rule_mask[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
     }
     int int_verdict_buffer = 0;
+//    int int_verdict_buffer[ruleNum];
     for (int i = 0; i < ip_array_size * ruleNum; i++)
     {
 
@@ -112,18 +113,22 @@ int main()
         sport_result = (rule_s_port[i % ruleNum] == input_sport[i / ruleNum]);
         dport_result = (rule_d_port[i % ruleNum] == input_dport[i / ruleNum]);
         test = test & protocol_result & sport_result & dport_result;
-        //        printf("%d|", i / ruleNum);
-        //        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
-        if (test == 1)
-        {
-            int_verdict_buffer = rule_verdict[i % ruleNum];
-            i += (ruleNum - i % ruleNum) - 1;
-            printf("%d", int_verdict_buffer);
-            int_verdict_buffer = 0;
+        if (!test){
+            test = 6;
         }
-        else if (i % ruleNum == ruleNum - 1)
-        {
-            printf("%d", int_verdict_buffer);
+        else if (test == 1){
+            test = rule_verdict[i % ruleNum];
+        }
+        int_verdict_buffer += test;
+        if((int_verdict_buffer / 6 != ruleNum) & (i % ruleNum == ruleNum -1)){
+            if(int_verdict_buffer % 6 != 0){
+                printf("%d", int_verdict_buffer % 6);
+            }else{
+                printf("%d", int_verdict_buffer % 6);
+            }
+            int_verdict_buffer = 0;
+        }else if(int_verdict_buffer / 6 == ruleNum){
+            printf("%d", int_verdict_buffer % 6);
             int_verdict_buffer = 0;
         }
     }
