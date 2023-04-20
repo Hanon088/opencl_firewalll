@@ -23,8 +23,8 @@ __kernel void compare(__global ulong *input_ip,
 
        __local int local_output;
 
-       int rule_index  = get_global_id(0);
-       int input_index  = get_global_id(1);
+       intptr_t rule_index  = get_global_id(0);
+       intptr_t input_index  = get_global_id(1);
 
        local_input_ip = input_ip[input_index];
        local_input_sport = input_sport[input_index];

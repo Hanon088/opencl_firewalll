@@ -111,19 +111,22 @@ int main()
         protocol_result = (rule_protocol[i % ruleNum] == input_protocol[i / ruleNum]);
         sport_result = (rule_s_port[i % ruleNum] == input_sport[i / ruleNum]);
         dport_result = (rule_d_port[i % ruleNum] == input_dport[i / ruleNum]);
-        //        printf("%d|", i / ruleNum);
-        //        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
+        test = test & protocol_result & sport_result & dport_result;
+//                printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
         if (test == 1)
         {
             int_verdict_buffer = rule_verdict[i % ruleNum];
-            i += ruleNum - i % ruleNum;
+            i += (ruleNum - i % ruleNum) - 1 ;
+//            printf("%d %d\n", int_verdict_buffer, i);
             printf("%d", int_verdict_buffer);
-            verdict_buffer = 0;
+//            printf("|++%d++|\n", int_verdict_buffer);
+            int_verdict_buffer = 0;
         }
-        if (i % ruleNum == ruleNum - 1)
+        else if (i % ruleNum + 1 == ruleNum)
         {
             printf("%d", int_verdict_buffer);
-            verdict_buffer = 0;
+//            printf("%d %d\n", int_verdict_buffer, i);
+            int_verdict_buffer = 0;
         }
     }
     printf("\n");
