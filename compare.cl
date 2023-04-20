@@ -19,8 +19,8 @@ __kernel void compare(__global ulong *input_ip, __global ushort *input_sport,
 
   __local int local_output;
 
-  int rule_index = get_global_id(0);
-  int input_index = get_global_id(1);
+  intptr_t rule_index = get_global_id(0);
+  intptr_t input_index = get_global_id(1);
 
   local_input_ip = input_ip[input_index];
   local_input_sport = input_sport[input_index];
@@ -33,9 +33,9 @@ __kernel void compare(__global ulong *input_ip, __global ushort *input_sport,
   local_rule_dport = rule_dport[rule_index];
   local_rule_protocol = rule_protocol[rule_index];
 
-  int packet_global_id_0 = get_global_id(0);
-  int packet_global_id_1 = get_global_id(1);
-  int packet_index =
+  intptr_t packet_global_id_0 = get_global_id(0);
+  intptr_t packet_global_id_1 = get_global_id(1);
+  intptr_t packet_index =
       packet_global_id_1 * get_global_size(0) + packet_global_id_0;
 
   if (local_rule_protocol == 0) {
@@ -62,7 +62,7 @@ __kernel void sync_rule_and_verdict(__global int *set_already_compare,
   __local int local_result;
   __local int input1;
   local_result = 0;
-  int global_id = get_global_id(0) * rule_size[0];
+  intptr_t global_id = get_global_id(0) * rule_size[0];
   for (int i = 0; i < rule_size[0]; i++) {
     input1 = set_already_compare[global_id + i];
     if (input1 == 1) {
