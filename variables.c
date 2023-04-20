@@ -2,12 +2,12 @@
 // #include <stdint.h>
 #include <CL/cl.h>
 
-const char *source = "compare.cl";
+const char *source = "/home/tanate/CLionProjects/opencl_firewalll/compare.cl";
 // const char *source = "C:\\Users\\User\\opencl_firewalll\\compare.cl";
 const char *func_compare = "compare";
 const char *func_sync = "sync_rule_and_verdict";
 
-const char *rule_file = "rules.txt";
+const char *rule_file = "/home/tanate/CLionProjects/opencl_firewalll/rules.txt";
 // const char *rule_file = "C:\\Users\\User\\opencl_firewalll\\rules.txt";
 
 cl_mem rule_ip_buffer,
