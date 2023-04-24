@@ -292,12 +292,14 @@ void *verdictThread()
     free_rule_list(ruleList);
 
     rule_load_end = clock();
+    printf("Time taken to load rules = %.2lf Microseconds\n", ((double)(rule_load_end - rule_load_start) / CLOCKS_PER_SEC) * 1000000);
 
     /*for (int i = 0; i < ruleNum; i++)
     {
         printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
     }*/
 
+    cl_buff_start = clock();
     // prep opencl buffers
     deviceId = create_device_cl();
     // create context
@@ -309,6 +311,9 @@ void *verdictThread()
 
     // create all buffer Rule(with value) and input
     declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
+
+    cl_buff_end = clock();
+    printf("Time taken to prepare OpenCL buffers = %.2lf Microseconds\n", ((double)(cl_buff_end - cl_buff_start) / CLOCKS_PER_SEC) * 1000000);
 
     verdict_loop_start = clock();
     // waits for packets to arrive in ALL queues
@@ -560,6 +565,10 @@ int main()
     }
 
     program_end = clock();
+    printf("Total time program was running = %.2lf Microseconds\n", ((double)(program_end - program_start) / CLOCKS_PER_SEC) * 1000000);
+    printf("Total time recvThread was running = %.2lf Microseconds\n", ((double)(recv_thread_end - program_start) / CLOCKS_PER_SEC) * 1000000);
+    // printf("Total time verdictThread was running = %.2lf Microseconds\n", ((double)(verdict_thread_end - program_start) / CLOCKS_PER_SEC) * 1000000);
+    printf("Total time verdictThread loop was running = %.2lf Microseconds\n", ((double)(verdict_thread_end - verdict_loop_start) / CLOCKS_PER_SEC) * 1000000);
 
     for (int i = 0; i < queue_num; i++)
     {
