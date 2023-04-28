@@ -420,9 +420,9 @@ void *verdictThread()
         // time after packets are sent to gpu
         after_gpu = clock();
         gpu_time = ((double)(after_gpu - to_gpu) / CLOCKS_PER_SEC) * 1000000;
-        accumulated_time += gpu_time;
+        // accumulated_time += gpu_time;
         printf("GPU Time = %.2lf Microseconds\n", gpu_time);
-        printf("Accumulated GPU Time = %.2lf Microseconds\n", accumulated_time);
+        // printf("Accumulated GPU Time = %.2lf Microseconds\n", accumulated_time);
         for (int i = 0; i < queue_num; i++)
         {
             for (int j = 0; j < queue_multipler; j++)
@@ -554,7 +554,7 @@ int main()
 
     while (1)
     {
-        if ((batch_num >= 100) && recv_running && verdict_running)
+        if ((batch_num >= 1000) && recv_running && verdict_running)
         {
             recv_running = 0;
             pthread_join(rt, NULL);
