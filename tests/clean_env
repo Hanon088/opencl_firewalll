@@ -1,1 +1,1 @@
-iptables -D FORWARD -p ALL -j NFQUEUE --queue-balance 0:6 --queue-cpu-fanout
+iptables -D FORWARD -p ALL -j NFQUEUE --queue-balance 0:4 --queue-cpu-fanout
