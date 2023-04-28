@@ -565,6 +565,7 @@ int main()
     }
 
     program_end = clock();
+    print("\n\n");
     printf("Total time program was running = %.2lf Microseconds\n", ((double)(program_end - program_start) / CLOCKS_PER_SEC) * 1000000);
     printf("Total time recvThread was running = %.2lf Microseconds\n", ((double)(recv_thread_end - program_start) / CLOCKS_PER_SEC) * 1000000);
     // printf("Total time verdictThread was running = %.2lf Microseconds\n", ((double)(verdict_thread_end - program_start) / CLOCKS_PER_SEC) * 1000000);
