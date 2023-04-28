@@ -554,7 +554,7 @@ int main()
 
     while (1)
     {
-        if ((batch_num >= 100) && recv_running && verdict_running)
+        if ((batch_num >= 5000) && recv_running && verdict_running)
         {
             recv_running = 0;
             pthread_join(rt, NULL);
