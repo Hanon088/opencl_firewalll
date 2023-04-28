@@ -6,7 +6,7 @@ const char *source = "compare.cl";
 const char *func_compare = "compare";
 const char *func_sync = "sync_rule_and_verdict";
 
-const char *rule_file = "rules/rules_40k.txt";
+const char *rule_file = "rule_file.txt";
 
 // opencl buffers
 cl_mem rule_ip_buffer,
