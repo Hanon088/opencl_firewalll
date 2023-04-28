@@ -1,2 +1,2 @@
 ./clean_env
-iptables -I FORWARD -p ALL -j NFQUEUE --queue-balance 0:4
+iptables -I FORWARD -p ALL -j NFQUEUE --queue-num 0

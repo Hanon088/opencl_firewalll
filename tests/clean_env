@@ -1,1 +1,1 @@
-iptables -D FORWARD -p ALL -j NFQUEUE --queue-balance 0:4
+iptables -D FORWARD -p ALL -j NFQUEUE --queue-num 0
