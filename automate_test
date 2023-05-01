@@ -1,20 +1,20 @@
-cp ./tests/rules1k.txt rule_file.txt
+cp tests/rules1k.txt rule_file.txt
 ./opencl_firewall | tee out1k.txt
-cp ./tests/rules2k.txt rule_file.txt
+cp tests/rules2k.txt rule_file.txt
 ./opencl_firewall | tee out2k.txt
-cp ./tests/rules3k.txt rule_file.txt
+cp tests/rules3k.txt rule_file.txt
 ./opencl_firewall | tee out3k.txt
-cp ./tests/rules4k.txt rule_file.txt
+cp tests/rules4k.txt rule_file.txt
 ./opencl_firewall | tee out4k.txt
-cp ./tests/rules5k.txt rule_file.txt
+cp tests/rules5k.txt rule_file.txt
 ./opencl_firewall | tee out5k.txt
-cp ./tests/rules6k.txt rule_file.txt
+cp tests/rules6k.txt rule_file.txt
 ./opencl_firewall | tee out6k.txt
-cp ./tests/rules7k.txt rule_file.txt
+cp tests/rules7k.txt rule_file.txt
 ./opencl_firewall | tee out7k.txt
-cp ./tests/rules8k.txt rule_file.txt
+cp tests/rules8k.txt rule_file.txt
 ./opencl_firewall | tee out8k.txt
-cp ./tests/rules9k.txt rule_file.txt
+cp tests/rules9k.txt rule_file.txt
 ./opencl_firewall | tee out9k.txt
-cp ./tests/rules10k.txt rule_file.txt
+cp tests/rules10k.txt rule_file.txt
 ./opencl_firewall | tee out10k.txt
