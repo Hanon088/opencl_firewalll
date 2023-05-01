@@ -25,6 +25,11 @@ int main()
     uint16_t input_sport[ip_array_size], input_dport[ip_array_size]; // input source_port destination_port
     uint8_t input_protocol[ip_array_size];                           // input protocol
 
+    // packet input
+    uint64_t input_ip_gpu[ip_array_size];                                // input ip array sd_ip(uint64)
+    uint16_t input_sport_gpu[ip_array_size], input_dport_gpu[ip_array_size]; // input source_port destination_port
+    uint8_t input_protocol_gpu[ip_array_size];                           // input protocol
+
     int result[ip_array_size]; // output array order
 
     uint64_t *rule_ip;
@@ -67,9 +72,13 @@ int main()
         string_ip[0] = (unsigned int)1 + i;
         memcpy(&binary_ip, string_ip, 4);
         input_ip[i] = binary_ip;
-        input_sport[i] = 80;
+        input_sport[i] = 0;
         input_dport[i] = 0;
-        input_protocol[i] = 0;
+        input_protocol[i] = 80;
+        input_ip_gpu[i] = binary_ip;
+        input_sport_gpu[i] = 0;
+        input_dport_gpu[i] = 0;
+        input_protocol_gpu[i] = 80;
     }
 
     string_ip[3] = (unsigned int)192;
@@ -77,12 +86,15 @@ int main()
     string_ip[1] = (unsigned int)0;
     string_ip[0] = (unsigned int)1;
     memcpy(&input_ip[4], string_ip, 4); // define item number 4 to 192.169.0.1
+    memcpy(&input_ip_gpu[4], string_ip, 4); // define item number 4 to 192.169.0.1
 
     string_ip[3] = (unsigned int)192;
     string_ip[2] = (unsigned int)171;
     string_ip[1] = (unsigned int)0;
     string_ip[0] = (unsigned int)1;
     memcpy(&input_ip[9], string_ip, 4);
+    memcpy(&input_ip_gpu[9], string_ip, 4);
+
 
     // check rule_ip ip on cpu
     // wearied output on cpu but in opencl work fine
@@ -111,19 +123,20 @@ int main()
         protocol_result = (rule_protocol[i % ruleNum] == input_protocol[i / ruleNum]);
         sport_result = (rule_s_port[i % ruleNum] == input_sport[i / ruleNum]);
         dport_result = (rule_d_port[i % ruleNum] == input_dport[i / ruleNum]);
-        //        printf("%d|", i / ruleNum);
-        //        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
+        test = test & protocol_result & sport_result & dport_result;
+//                printf("%d|", i / ruleNum);
+//                printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
         if (test == 1)
         {
             int_verdict_buffer = rule_verdict[i % ruleNum];
-            i += ruleNum - i % ruleNum;
+            i += (ruleNum - i % ruleNum) - 1;
             printf("%d", int_verdict_buffer);
-            verdict_buffer = 0;
+            int_verdict_buffer = 0;
         }
-        if (i % ruleNum == ruleNum - 1)
+        else if (i % ruleNum == ruleNum - 1)
         {
             printf("%d", int_verdict_buffer);
-            verdict_buffer = 0;
+            int_verdict_buffer = 0;
         }
     }
     printf("\n");
@@ -149,7 +162,7 @@ int main()
     {
         for (int i = 0; i < sizeof(result) / sizeof(int); i++)
         {
-            compare(input_ip, input_sport, input_dport, input_protocol, &deviceId, &context, &program, result, ip_array_size, ruleNum);
+            compare(input_ip_gpu, input_sport_gpu, input_dport_gpu, input_protocol_gpu, &deviceId, &context, &program, result, ip_array_size, ruleNum);
             printf("%d", result[i]);
         }
         printf(" | %d\n", j);
