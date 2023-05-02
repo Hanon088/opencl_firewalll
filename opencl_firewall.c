@@ -344,7 +344,7 @@ void *verdictThread()
             }
         }
 
-        printf("\n\n\nSTARTING OCL PREP %ld\n\n\n", ++batch_num);
+        // printf("\n\n\nSTARTING OCL PREP %ld\n\n\n", ++batch_num);
 
         for (int i = 0; i < queue_num; i++)
         {
@@ -412,7 +412,7 @@ void *verdictThread()
         }
         printf("\n");*/
 
-        printf("MATCH ON OPENCL DEVICE\n");
+        // printf("MATCH ON OPENCL DEVICE\n");
 
         // time before packets are sent to gpu
         // to_gpu = clock();
@@ -427,7 +427,7 @@ void *verdictThread()
         {
             for (int j = 0; j < queue_multipler; j++)
             {
-                printf("%d", result[i * queue_multipler + j]);
+                // printf("%d", result[i * queue_multipler + j]);
                 nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i * queue_multipler + j], 0, NULL);
                 // nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, NF_ACCEPT, 0, NULL);
 
