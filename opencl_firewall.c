@@ -552,17 +552,17 @@ int main()
 
     // need to turn this to a daemon
 
-    /*while (1)
+    while (1)
     {
-        if ((batch_num >= 1000) && recv_running && verdict_running)
+        /*if ((batch_num >= 1000) && recv_running && verdict_running)
         {
             recv_running = 0;
             pthread_join(rt, NULL);
             verdict_running = 0;
             pthread_join(vt, NULL);
             break;
-        }
-    }*/
+        }*/
+    }
 
     program_end = clock();
     printf("\n\n");
