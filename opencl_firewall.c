@@ -415,13 +415,13 @@ void *verdictThread()
         printf("MATCH ON OPENCL DEVICE\n");
 
         // time before packets are sent to gpu
-        to_gpu = clock();
+        // to_gpu = clock();
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
         // time after packets are sent to gpu
-        after_gpu = clock();
-        gpu_time = ((double)(after_gpu - to_gpu) / CLOCKS_PER_SEC) * 1000000;
+        // after_gpu = clock();
+        // gpu_time = ((double)(after_gpu - to_gpu) / CLOCKS_PER_SEC) * 1000000;
         // accumulated_time += gpu_time;
-        printf("GPU Time = %.2lf Microseconds\n", gpu_time);
+        // printf("GPU Time = %.2lf Microseconds\n", gpu_time);
         // printf("Accumulated GPU Time = %.2lf Microseconds\n", accumulated_time);
         for (int i = 0; i < queue_num; i++)
         {
@@ -552,7 +552,7 @@ int main()
 
     // need to turn this to a daemon
 
-    while (1)
+    /*while (1)
     {
         if ((batch_num >= 1000) && recv_running && verdict_running)
         {
@@ -562,7 +562,7 @@ int main()
             pthread_join(vt, NULL);
             break;
         }
-    }
+    }*/
 
     program_end = clock();
     printf("\n\n");
