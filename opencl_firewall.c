@@ -178,39 +178,39 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 
     if (!packet_data[queueNum])
     {
-        err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
+        /*err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
             fprintf(stderr, "pthread_mutex_lock fails\n");
             exit(1);
-        }
+        }*/
         packet_data[queueNum] = localBuff;
         packet_data_tail[queueNum] = localBuff;
         packet_data_count[queueNum]++;
         err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
-        if (err != 0)
+        /*if (err != 0)
         {
             fprintf(stderr, "pthread_mutex_unlock fails\n");
             exit(1);
-        }
+        }*/
     }
     else if (!packet_data_tail[queueNum]->next)
     {
-        err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
+        /*err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
             fprintf(stderr, "pthread_mutex_lock fails\n");
             exit(1);
-        }
+        }*/
         packet_data_tail[queueNum]->next = localBuff;
         packet_data_tail[queueNum] = packet_data_tail[queueNum]->next;
         packet_data_count[queueNum]++;
-        err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
+        /*err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
             fprintf(stderr, "pthread_mutex_unlock fails\n");
             exit(1);
-        }
+        }*/
     }
     else
     {
@@ -425,18 +425,18 @@ void *verdictThread()
         // printf("Accumulated GPU Time = %.2lf Microseconds\n", accumulated_time);
         for (int i = 0; i < queue_num; i++)
         {
+            /*mutex_err = pthread_mutex_lock(&packet_data_mtx[i]);
+                if (mutex_err != 0)
+                {
+                    fprintf(stderr, "pthread_mutex_lock fails\n");
+                    exit(1);
+                }*/
             for (int j = 0; j < queue_multipler; j++)
             {
                 // printf("%d", result[i * queue_multipler + j]);
                 nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i * queue_multipler + j], 0, NULL);
                 // nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, NF_ACCEPT, 0, NULL);
 
-                mutex_err = pthread_mutex_lock(&packet_data_mtx[i]);
-                if (mutex_err != 0)
-                {
-                    fprintf(stderr, "pthread_mutex_lock fails\n");
-                    exit(1);
-                }
                 if (packet_data[i]->next)
                 {
                     tempNode = NULL;
@@ -448,13 +448,13 @@ void *verdictThread()
                     free(tempNode);
                     packet_data_count[i]--;
                 }
-                mutex_err = pthread_mutex_unlock(&packet_data_mtx[i]);
+            }
+            /*mutex_err = pthread_mutex_unlock(&packet_data_mtx[i]);
                 if (mutex_err != 0)
                 {
                     fprintf(stderr, "pthread_mutex_unlock fails\n");
                     exit(1);
-                }
-            }
+                }*/
         }
     }
     release_buffer(&program, &context);
