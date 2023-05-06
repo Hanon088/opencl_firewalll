@@ -81,7 +81,7 @@ int main()
     }*/
     printf("\n");
 
-    printf("\tMATCHES\t\tIP\tProto\tsPort\tdPort\tVerdict\n");
+    printf("\tMatch Fields\t\tIP\tProto\tsPort\tdPort\tVerdict\n");
     int int_verdict_buffer = 0;
     for (int i = 0; i < ip_array_size * ruleNum; i++)
     {
@@ -124,6 +124,10 @@ int main()
             int_verdict_buffer = 0;
         }
         printf("\n");
+        if (i % ruleNum == ruleNum - 1)
+        {
+            printf("\n");
+        }
     }
     printf("\n");
 
