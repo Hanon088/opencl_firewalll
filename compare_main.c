@@ -81,7 +81,7 @@ int main()
     }*/
     printf("\n");
 
-    printf("\tMATCHES\t\tIP\tProtocol\tsPort\tdPort\tVerdict\n");
+    printf("\tMATCHES\t\tIP\tProto\tsPort\tdPort\tVerdict\n");
     int int_verdict_buffer = 0;
     for (int i = 0; i < ip_array_size * ruleNum; i++)
     {
