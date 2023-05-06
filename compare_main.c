@@ -120,6 +120,7 @@ int main()
             printf("%d", int_verdict_buffer);
             int_verdict_buffer = 0;
         }
+        printf("\n");
     }
     printf("\n");
 
