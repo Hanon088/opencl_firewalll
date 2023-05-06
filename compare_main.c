@@ -109,7 +109,7 @@ int main()
         printf("test: %d, protocol: %d, sport: %d, dport: %d", test, protocol_result, sport_result, dport_result);
         test = test & protocol_result & sport_result & dport_result;
         printf("|--%d++%d|", i % ruleNum, test);
-        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i / ruleNum]));
+        // printf("%u.%u.%u.%u\n", printable_ip(input_ip[i / ruleNum]));
         if (test == 1)
         {
             int_verdict_buffer = rule_verdict[i % ruleNum];
