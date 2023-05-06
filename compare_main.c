@@ -103,11 +103,11 @@ int main()
         protocol_result = (rule_protocol[i % ruleNum] == protocol_buffer);
         sport_result = (rule_s_port[i % ruleNum] == sport_buffer);
         dport_result = (rule_d_port[i % ruleNum] == dport_buffer);
-        //        printf("rule_proto: %d, input_proto: %d, ", rule_protocol[i % ruleNum] ,input_protocol[i / ruleNum]);
-        //        printf("test: %d, protocol: %d, sport: %d, dport: %d",test, protocol_result, sport_result, dport_result);
+        printf("rule_proto: %d, input_proto: %d, ", rule_protocol[i % ruleNum], input_protocol[i / ruleNum]);
+        printf("test: %d, protocol: %d, sport: %d, dport: %d", test, protocol_result, sport_result, dport_result);
         test = test & protocol_result & sport_result & dport_result;
-        //                        printf("|--%d++%d|",i % ruleNum,test);
-        //                        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
+        printf("|--%d++%d|", i % ruleNum, test);
+        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i / ruleNum]));
         if (test == 1)
         {
             int_verdict_buffer = rule_verdict[i % ruleNum];
