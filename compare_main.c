@@ -54,7 +54,7 @@ int main()
     // initialize data copy ip and set rule_ip(uint64_t array)
 
     ruleList = malloc(sizeof(struct ipv4Rule));
-    load_rules("packets.txt", ruleList);
+    load_rules("C:\\Users\\User\\opencl_firewalll\\packets.txt", ruleList);
     rule_list_to_arr_joined(ruleList, input_ip, maskSink, input_protocol, input_sport, input_dport, verdictSink);
     rule_list_to_arr_joined(ruleList, input_ip_gpu, maskSink, input_protocol_gpu, input_sport_gpu, input_dport_gpu, verdictSink);
     free_rule_list(ruleList);
@@ -82,26 +82,31 @@ int main()
     int int_verdict_buffer = 0;
     for (int i = 0; i < ip_array_size * ruleNum; i++)
     {
+        int protocol_buffer = input_protocol[i / ruleNum];
+        int sport_buffer = input_sport[i / ruleNum];
+        int dport_buffer = input_dport[i / ruleNum];
 
         if (rule_protocol[i % ruleNum] == 0)
         {
-            input_protocol[i / ruleNum] = 0;
+            protocol_buffer = 0;
         }
         if (rule_s_port[i % ruleNum] == 0)
         {
-            input_sport[i / ruleNum] = 0;
+            sport_buffer = 0;
         }
         if (rule_d_port[i % ruleNum] == 0)
         {
-            input_dport[i / ruleNum] = 0;
+            dport_buffer = 0;
         }
         test = rule_ip[i % ruleNum] == (input_ip[i / ruleNum] & rule_mask[i % ruleNum]);
-        protocol_result = (rule_protocol[i % ruleNum] == input_protocol[i / ruleNum]);
-        sport_result = (rule_s_port[i % ruleNum] == input_sport[i / ruleNum]);
-        dport_result = (rule_d_port[i % ruleNum] == input_dport[i / ruleNum]);
+        protocol_result = (rule_protocol[i % ruleNum] == protocol_buffer);
+        sport_result = (rule_s_port[i % ruleNum] == sport_buffer);
+        dport_result = (rule_d_port[i % ruleNum] == dport_buffer);
+//        printf("rule_proto: %d, input_proto: %d, ", rule_protocol[i % ruleNum] ,input_protocol[i / ruleNum]);
+//        printf("test: %d, protocol: %d, sport: %d, dport: %d",test, protocol_result, sport_result, dport_result);
         test = test & protocol_result & sport_result & dport_result;
-        //                printf("%d|", i / ruleNum);
-        //                printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
+//                        printf("|--%d++%d|",i % ruleNum,test);
+//                        printf("%u.%u.%u.%u\n", printable_ip(input_ip[i/ruleNum]));
         if (test == 1)
         {
             int_verdict_buffer = rule_verdict[i % ruleNum];
