@@ -128,6 +128,7 @@ int main()
         if (i % ruleNum == ruleNum - 1)
         {
             printf("Chosen Verdict\t\t\t\t\t\t%d\n\n", chosen_verdict);
+            chosen_verdict = 0;
         }
     }
     printf("\n");
