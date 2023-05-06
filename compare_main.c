@@ -120,7 +120,7 @@ int main()
         }
         else if (i % ruleNum == ruleNum - 1)
         {
-            printf("%d", int_verdict_buffer);
+            // printf("%d", int_verdict_buffer);
             int_verdict_buffer = 0;
         }
         printf("\n");
