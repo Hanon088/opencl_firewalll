@@ -1,4 +1,4 @@
-#define ip_array_size 5
+#define ip_array_size 6
 #include <CL/cl.h>
 extern const char *source;
 extern const char *func_compare;
