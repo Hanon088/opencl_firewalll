@@ -64,10 +64,10 @@ int main()
     // wearied output on cpu but in opencl work fine
     int test,
         protocol_result, sport_result, dport_result;
-    printf("\tsIP\tdIP\t\tsMask\t\tdMask\t\tProto\tsPort\tdPort\tVerdict\n\n");
+    printf("\tsIP\t\tdIP\t\tsMask\t\tdMask\t\tProto\tsPort\tdPort\tVerdict\n\n");
     for (int i = 0; i < ruleNum; i++)
     {
-        printf("RULE %d\t%u.%u.%u.%u\t%u.%u.%u.%u\t\t%u.%u.%u.%u\t\t%u.%u.%u.%u\t\t%d\t%u\t%u\t%d\n", i, printable_ip_joined(rule_ip[i]), printable_ip_joined(rule_mask[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i], rule_verdict[i]);
+        printf("RULE %d\t%u.%u.%u.%u\t%u.%u.%u.%u\t%u.%u.%u.%u\t%u.%u.%u.%u\t%d\t%u\t%u\t%d\n", i, printable_ip_joined(rule_ip[i]), printable_ip_joined(rule_mask[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i], rule_verdict[i]);
     }
     printf("\n--------------------------------------\n\n");
     // printf("PACKETS CPU\n");
