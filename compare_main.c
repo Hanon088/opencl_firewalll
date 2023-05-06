@@ -80,6 +80,7 @@ int main()
         printf("PACKET %d s %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(input_ip_gpu[i]), input_protocol_gpu[i], input_sport_gpu[i], input_dport_gpu[i]);
     }
     printf("\n");
+
     int int_verdict_buffer = 0;
     for (int i = 0; i < ip_array_size * ruleNum; i++)
     {
@@ -141,7 +142,13 @@ int main()
     // create all buffer Rule(with value) and input
     declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
 
-    for (int j = 0; j < 10; j++)
+    compare(input_ip_gpu, input_sport_gpu, input_dport_gpu, input_protocol_gpu, &deviceId, &context, &program, result, ip_array_size, ruleNum);
+    for (int i = 0; i < sizeof(result) / sizeof(int); i++)
+    {
+        printf("%d", result[i]);
+    }
+
+    /*for (int j = 0; j < 10; j++)
     {
         for (int i = 0; i < sizeof(result) / sizeof(int); i++)
         {
@@ -149,7 +156,7 @@ int main()
             printf("%d", result[i]);
         }
         printf(" | %d\n", j);
-    }
+    }*/
 
     // release all resources
     free(rule_ip);
