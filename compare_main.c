@@ -82,7 +82,7 @@ int main()
     printf("\n");
 
     printf("\tMatch Fields\tIP\tProto\tsPort\tdPort\tVerdict\n\n");
-    int int_verdict_buffer = 0, chosen_verdict = 0;
+    int int_verdict_buffer = 0, chosen_verdict = -1;
     for (int i = 0; i < ip_array_size * ruleNum; i++)
     {
         int protocol_buffer = input_protocol[i / ruleNum];
@@ -116,7 +116,10 @@ int main()
             int_verdict_buffer = rule_verdict[i % ruleNum];
             // i += (ruleNum - i % ruleNum) - 1;
             printf("%d", int_verdict_buffer);
-            chosen_verdict = int_verdict_buffer;
+            if (chosen_verdict == -1)
+            {
+                chosen_verdict = int_verdict_buffer;
+            }
             int_verdict_buffer = 0;
         }
         else if (i % ruleNum == ruleNum - 1)
@@ -127,8 +130,12 @@ int main()
         printf("\n");
         if (i % ruleNum == ruleNum - 1)
         {
+            if (chosen_verdict == -1)
+            {
+                chosen_verdict = 0;
+            }
             printf("Chosen Verdict\t\t\t\t\t\t%d\n\n", chosen_verdict);
-            chosen_verdict = 0;
+            chosen_verdict = -1;
         }
     }
     printf("\n");
