@@ -81,7 +81,7 @@ int main()
     }*/
     printf("\n");
 
-    printf("\tMATCHES\tIP\tProtocol\tsPort\tdPort\tVerdict\n");
+    printf("\tMATCHES\t\tIP\tProtocol\tsPort\tdPort\tVerdict\n");
     int int_verdict_buffer = 0;
     for (int i = 0; i < ip_array_size * ruleNum; i++)
     {
@@ -105,7 +105,7 @@ int main()
         protocol_result = (rule_protocol[i % ruleNum] == protocol_buffer);
         sport_result = (rule_s_port[i % ruleNum] == sport_buffer);
         dport_result = (rule_d_port[i % ruleNum] == dport_buffer);
-        printf("Packet %d Rule %d\t", i / ruleNum, i % ruleNum);
+        printf("Packet %d Rule %d\t\t", i / ruleNum, i % ruleNum);
         // printf("rule_proto: %d, input_proto: %d, ", rule_protocol[i % ruleNum], input_protocol[i / ruleNum]);
         printf("%d\t%d\t%d\t%d\t", test, protocol_result, sport_result, dport_result);
         test = test & protocol_result & sport_result & dport_result;
@@ -120,7 +120,7 @@ int main()
         }
         else if (i % ruleNum == ruleNum - 1)
         {
-            // printf("%d", int_verdict_buffer);
+            printf("%d", int_verdict_buffer);
             int_verdict_buffer = 0;
         }
         printf("\n");
