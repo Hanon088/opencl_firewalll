@@ -345,6 +345,7 @@ void *verdictThread()
         }
 
         // printf("\n\n\nSTARTING OCL PREP %ld\n\n\n", ++batch_num);
+        ++batch_num;
 
         for (int i = 0; i < queue_num; i++)
         {
@@ -554,14 +555,14 @@ int main()
 
     while (1)
     {
-        /*if ((batch_num >= 1000) && recv_running && verdict_running)
+        if ((batch_num >= 1000000) && recv_running && verdict_running)
         {
             recv_running = 0;
             pthread_join(rt, NULL);
             verdict_running = 0;
             pthread_join(vt, NULL);
             break;
-        }*/
+        }
     }
 
     program_end = clock();
