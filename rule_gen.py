@@ -15,5 +15,5 @@ rules = [
 rules[-1] = "0.0.0.0 0.0.0.0 0.0.0.0 0.0.0.0 0 0 0 1 ;"
 rules = "".join(rules)
 
-with open('rules\\rules_9k.txt', 'w') as f:
+with open('rules\\rules_2048.txt', 'w') as f:
     print(rules, file=f)
