@@ -45,7 +45,7 @@ struct callbackStruct
 };
 
 // file global for thread loops
-volatile int program_running = 1;
+volatile int recv_running = 1, verdict_running = 1;
 
 // file global for libnetfilter_queue
 long int packet_count = 0;
@@ -295,7 +295,7 @@ void *verdictThread()
     declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
 
     // waits for packets to arrive in ALL queues
-    while (program_running)
+    while (verdict_running)
     {
         for (int i = 0; i < queue_num; i++)
         {
@@ -311,7 +311,7 @@ void *verdictThread()
         continue;
     }
 
-    while (program_running)
+    while (verdict_running)
     {
         for (int i = 0; i < queue_num; i++)
         {
@@ -434,6 +434,7 @@ void *verdictThread()
     free(rule_s_port);
     free(rule_d_port);
     free(rule_verdict);
+    verdict_running = -1;
 }
 
 // connect to libnetfilter_queue via recv, could this be a bottleneck?
@@ -441,13 +442,14 @@ void *recvThread()
 {
     int rcv_len;
 
-    while (program_running)
+    while (recv_running)
     {
         rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
         if (rcv_len < 0)
             continue;
         nfq_handle_packet(handler, buf, rcv_len);
     }
+    recv_running = -1;
     return 0;
 }
 
@@ -522,8 +524,10 @@ int main()
     }
 
     // clean up queues
-    pthread_cancel(rt);
-    pthread_cancel(vt);
+    recv_running = 0;
+    pthread_join(rt, NULL);
+    verdict_running = 0;
+    pthread_join(vt, NULL);
 
     for (int i = 0; i < queue_num; i++)
     {
