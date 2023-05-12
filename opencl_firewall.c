@@ -27,23 +27,6 @@
 #include "rule_loader.h"
 #include "src/src.h"
 
-// struct to store packet data from callback
-struct callbackStruct
-{
-    struct nfq_q_handle *queue;
-    struct nfq_data *nfad;
-    struct callbackStruct *next;
-    uint32_t source_ip;
-    uint32_t dest_ip;
-    uint32_t packet_id;
-
-    uint8_t ip_protocol;
-    uint16_t source_port;
-    uint16_t dest_port;
-    /*a packet buffer may needs to be implemented
-    if it turns out libnetfilter_queue doesn't hold the packet*/
-};
-
 // file global for thread loops
 volatile int program_running = 1;
 
@@ -55,9 +38,13 @@ char buf[0xffff] __attribute__((aligned));
 struct nfq_handle *handler;
 
 // file global for storing packet
-struct callbackStruct *packet_data[queue_num];
+/*struct callbackStruct *packet_data[queue_num];
 struct callbackStruct *packet_data_tail[queue_num];
-static pthread_mutex_t packet_data_mtx[queue_num];
+static pthread_mutex_t packet_data_mtx[queue_num];*/
+uint64_t array_ip_input[ip_array_size];
+uint32_t packet_id[ip_array_size];
+uint8_t protocol_input[ip_array_size];
+uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
 static volatile int packet_data_count[queue_num];
 
 // file global for OpenCL kernel
@@ -70,24 +57,13 @@ static int
 netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq_data *nfad, void *data)
 {
     int queueNum, rcv_len, err;
-    struct callbackStruct *localBuff, *lastBuff;
     unsigned char *rawData;
     struct pkt_buff *pkBuff;
     struct iphdr *ip;
     struct nfqnl_msg_packet_hdr *ph;
     struct tcphdr *tcp;
     struct udphdr *udp;
-    // uint32_t source_ip, dest_ip;
-
-    localBuff = malloc(sizeof(struct callbackStruct));
-    lastBuff = NULL;
-
-    localBuff->nfad = malloc(sizeof(nfad));
-
-    localBuff->queue = queue;
-
-    memcpy(localBuff->nfad, nfad, sizeof(nfad));
-    localBuff->next = NULL;
+    uint32_t ip_addr[2];
 
     memcpy(&queueNum, (int *)data, sizeof(int));
     // printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum] + 1);
@@ -122,28 +98,27 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         return 0;
     }
 
-    localBuff->source_ip = ntohl(ip->saddr);
-    localBuff->dest_ip = ntohl(ip->daddr);
-    localBuff->packet_id = ntohl(ph->packet_id);
-    localBuff->ip_protocol = ip->protocol;
+    memcpy(&array_ip_input[queueNum * queue_multipler + packet_data_count[queue_num]], ip_addr, 8);
+    s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = ip->protocol;
+    packet_id[queueNum * queue_multipler + packet_data_count[queue_num]] = ntohl(ph->packet_id);
 
     if (nfq_ip_set_transport_header(pkBuff, ip) < 0)
     {
-        localBuff->source_port = 0;
-        localBuff->dest_port = 0;
+        s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
+        d_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
     }
     else if (ip->protocol == IPPROTO_TCP)
     {
         tcp = nfq_tcp_get_hdr(pkBuff);
         if (!tcp)
         {
-            localBuff->source_port = 0;
-            localBuff->dest_port = 0;
+            s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
+            d_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
         }
         else
         {
-            localBuff->source_port = ntohs(tcp->source);
-            localBuff->dest_port = ntohs(tcp->dest);
+            s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = ntohs(tcp->source);
+            d_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = ntohs(tcp->dest);
         }
     }
     else if (ip->protocol == IPPROTO_UDP)
@@ -156,79 +131,19 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         }
         else
         {
-            localBuff->source_port = ntohs(udp->source);
-            localBuff->dest_port = ntohs(udp->dest);
+            s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = ntohs(udp->source);
+            d_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = ntohs(udp->dest);
         }
     }
     else
     {
-        localBuff->source_port = 0;
-        localBuff->dest_port = 0;
+        s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
+        d_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
     }
 
     pktb_free(pkBuff);
 
-    if (!packet_data[queueNum])
-    {
-        err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
-        if (err != 0)
-        {
-            fprintf(stderr, "pthread_mutex_lock fails\n");
-            exit(1);
-        }
-        packet_data[queueNum] = localBuff;
-        packet_data_tail[queueNum] = localBuff;
-        packet_data_count[queueNum]++;
-        err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
-        if (err != 0)
-        {
-            fprintf(stderr, "pthread_mutex_unlock fails\n");
-            exit(1);
-        }
-    }
-    else if (!packet_data_tail[queueNum]->next)
-    {
-        err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
-        if (err != 0)
-        {
-            fprintf(stderr, "pthread_mutex_lock fails\n");
-            exit(1);
-        }
-        packet_data_tail[queueNum]->next = localBuff;
-        packet_data_tail[queueNum] = packet_data_tail[queueNum]->next;
-        packet_data_count[queueNum]++;
-        err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
-        if (err != 0)
-        {
-            fprintf(stderr, "pthread_mutex_unlock fails\n");
-            exit(1);
-        }
-    }
-    else
-    {
-        err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
-        if (err != 0)
-        {
-            fprintf(stderr, "pthread_mutex_lock fails\n");
-            exit(1);
-        }
-        lastBuff = packet_data[queueNum];
-
-        // what if lastBuff is freed by verdictThread before finding next?
-        while (lastBuff->next != NULL)
-        {
-            lastBuff = lastBuff->next;
-        }
-        lastBuff->next = localBuff;
-        packet_data_tail[queueNum] = localBuff;
-        packet_data_count[queueNum]++;
-        err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
-        if (err != 0)
-        {
-            fprintf(stderr, "pthread_mutex_unlock fails\n");
-            exit(1);
-        }
-    }
+    packet_data_count[queue_num]++;
 
     return 0;
 }
@@ -330,17 +245,6 @@ int main()
     uint16_t *rule_d_port;
     int *rule_verdict;
 
-    // packet data buffers
-    int mutex_err;
-    uint32_t ip_addr[2] __attribute__((aligned));
-    struct callbackStruct *tempNode = NULL;
-    uint64_t array_ip_input[ip_array_size];
-    uint8_t protocol_input[ip_array_size];
-    uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
-    uint64_t array_ip_input_buff[queue_num][queue_multipler];
-    uint8_t protocol_input_buff[queue_num][queue_multipler];
-    uint16_t s_port_input_buff[queue_num][queue_multipler], d_port_input_buff[queue_num][queue_multipler];
-
     // prep rules
     ruleList = malloc(sizeof(struct ipv4Rule));
     ruleNum = load_rules(rule_file, ruleList);
@@ -363,9 +267,6 @@ int main()
 
     for (int i = 0; i < queue_num; i++)
     {
-        packet_data[i] = NULL;
-        packet_data_tail[i] = NULL;
-        packet_data_mtx[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
         packet_data_count[i] = 0;
     }
 
