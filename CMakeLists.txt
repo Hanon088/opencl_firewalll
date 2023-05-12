@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.22)
 project(opencl_firewalll C)
 
 set(CMAKE_C_STANDARD 11)
