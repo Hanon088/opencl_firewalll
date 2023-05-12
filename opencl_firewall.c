@@ -129,8 +129,8 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         udp = nfq_udp_get_hdr(pkBuff);
         if (!udp)
         {
-            localBuff->source_port = 0;
-            localBuff->dest_port = 0;
+            s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
+            d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
         }
         else
         {
