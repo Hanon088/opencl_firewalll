@@ -286,55 +286,7 @@ void *verdictThread()
             }
         }
 
-        // can be removed and write to 2d array and read as 1d from opencl when match on cpu is removed
-        memcpy(array_ip_input, array_ip_input_buff, ip_array_size * 8);
-        memcpy(protocol_input, protocol_input_buff, ip_array_size * 1);
-        memcpy(s_port_input, s_port_input_buff, ip_array_size * 2);
-        memcpy(d_port_input, d_port_input_buff, ip_array_size * 2);
-        // check rule_ip ip on cpu, can be removed later
-        int test,
-            protocol_result, sport_result, dport_result;
-        int verdict_buffer = 0;
-
-        printf("MATCH ON CPU\n");
-        for (int i = 0; i < ip_array_size * ruleNum; i++)
-        {
-
-            if (rule_protocol[i % ruleNum] == 0)
-            {
-                protocol_input[i / ruleNum] = 0;
-            }
-            if (rule_s_port[i % ruleNum] == 0)
-            {
-                s_port_input[i / ruleNum] = 0;
-            }
-            if (rule_d_port[i % ruleNum] == 0)
-            {
-                d_port_input[i / ruleNum] = 0;
-            }
-            test = rule_ip[i % ruleNum] == (array_ip_input[i / ruleNum] & rule_mask[i % ruleNum]);
-            protocol_result = (rule_protocol[i % ruleNum] == protocol_input[i / ruleNum]);
-            sport_result = (rule_s_port[i % ruleNum] == s_port_input[i / ruleNum]);
-            dport_result = (rule_d_port[i % ruleNum] == d_port_input[i / ruleNum]);
-            //        printf("%d|", i / ruleNum);
-            //        printf("%u.%u.%u.%u\n", printable_ip(array_ip_input[i/ruleNum]));
-            if (test == 1)
-            {
-                verdict_buffer = rule_verdict[i % ruleNum];
-                i += ruleNum - i % ruleNum;
-                printf("%d", verdict_buffer);
-                verdict_buffer = 0;
-            }
-            if (i % ruleNum == ruleNum - 1)
-            {
-                printf("%d", verdict_buffer);
-                verdict_buffer = 0;
-            }
-        }
-        printf("\n");
-
         printf("MATCH ON OPENCL DEVICE\n");
-        // compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
         for (int i = 0; i < queue_num; i++)
         {
@@ -342,31 +294,6 @@ void *verdictThread()
             {
                 printf("%d", result[i * queue_multipler + j]);
                 nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i * queue_multipler + j], 0, NULL);
-                // nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, NF_ACCEPT, 0, NULL);
-
-                mutex_err = pthread_mutex_lock(&packet_data_mtx[i]);
-                if (mutex_err != 0)
-                {
-                    fprintf(stderr, "pthread_mutex_lock fails\n");
-                    exit(1);
-                }
-                if (packet_data[i]->next)
-                {
-                    tempNode = NULL;
-
-                    tempNode = packet_data[i];
-                    packet_data[i] = packet_data[i]->next;
-                    tempNode->queue = NULL;
-                    free(tempNode->nfad);
-                    free(tempNode);
-                    packet_data_count[i]--;
-                }
-                mutex_err = pthread_mutex_unlock(&packet_data_mtx[i]);
-                if (mutex_err != 0)
-                {
-                    fprintf(stderr, "pthread_mutex_unlock fails\n");
-                    exit(1);
-                }
             }
         }
     }
