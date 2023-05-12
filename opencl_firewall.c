@@ -66,7 +66,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
     memcpy(&queueNum, (int *)data, sizeof(int));
     // printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum] + 1);
 
-    packet_queue[queueNum] = queue;
+    packet_queue[queueNum * queue_multipler + packet_data_count[queueNum]] = queue;
 
     ph = nfq_get_msg_packet_hdr(nfad);
     if (!ph)
