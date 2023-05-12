@@ -237,63 +237,6 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 void *verdictThread()
 {
 
-    // local opencl variables
-    cl_device_id deviceId;
-    cl_context context;
-    cl_program program;
-    cl_int ocl_err;
-
-    // rules buffers
-    uint64_t *rule_ip;
-    uint64_t *rule_mask;
-    uint8_t *rule_protocol;
-    uint16_t *rule_s_port;
-    uint16_t *rule_d_port;
-    int *rule_verdict;
-
-    // packet data buffers
-    int mutex_err;
-    uint32_t ip_addr[2] __attribute__((aligned));
-    struct callbackStruct *tempNode = NULL;
-    uint64_t array_ip_input[ip_array_size];
-    uint8_t protocol_input[ip_array_size];
-    uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
-    uint64_t array_ip_input_buff[queue_num][queue_multipler];
-    uint8_t protocol_input_buff[queue_num][queue_multipler];
-    uint16_t s_port_input_buff[queue_num][queue_multipler], d_port_input_buff[queue_num][queue_multipler];
-
-    // prep rules
-    ruleList = malloc(sizeof(struct ipv4Rule));
-    ruleNum = load_rules(rule_file, ruleList);
-
-    rule_ip = malloc(ruleNum * 8);
-    rule_mask = malloc(ruleNum * 8);
-    rule_protocol = malloc(ruleNum);
-    rule_s_port = malloc(ruleNum * 2);
-    rule_d_port = malloc(ruleNum * 2);
-    rule_verdict = malloc(ruleNum * sizeof(int));
-
-    printf("Number of rules %d\n", ruleNum);
-    rule_list_to_arr_joined(ruleList, rule_ip, rule_mask, rule_protocol, rule_s_port, rule_d_port, rule_verdict);
-    free_rule_list(ruleList);
-
-    for (int i = 0; i < ruleNum; i++)
-    {
-        printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-    }
-
-    // prep opencl buffers
-    deviceId = create_device_cl();
-    // create context
-    context = clCreateContext(NULL, 1, &deviceId, NULL, NULL, &ocl_err);
-    print_err(ocl_err);
-
-    // build program;
-    program = create_program_cl(context, deviceId, source);
-
-    // create all buffer Rule(with value) and input
-    declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
-
     // waits for packets to arrive in ALL queues
     while (program_running)
     {
@@ -436,21 +379,6 @@ void *verdictThread()
     free(rule_verdict);
 }
 
-// connect to libnetfilter_queue via recv, could this be a bottleneck?
-void *recvThread()
-{
-    int rcv_len;
-
-    while (program_running)
-    {
-        rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
-        if (rcv_len < 0)
-            continue;
-        nfq_handle_packet(handler, buf, rcv_len);
-    }
-    return 0;
-}
-
 // only functions to load the programm
 int main()
 {
@@ -458,6 +386,53 @@ int main()
     pthread_t vt, rt;
     int queueNum[queue_num];
     struct callbackStruct *tempNode;
+
+    int rcv_len;
+
+    // local opencl variables
+    cl_device_id deviceId;
+    cl_context context;
+    cl_program program;
+    cl_int ocl_err;
+
+    // rules buffers
+    uint64_t *rule_ip;
+    uint64_t *rule_mask;
+    uint8_t *rule_protocol;
+    uint16_t *rule_s_port;
+    uint16_t *rule_d_port;
+    int *rule_verdict;
+
+    // packet data buffers
+    int mutex_err;
+    uint32_t ip_addr[2] __attribute__((aligned));
+    struct callbackStruct *tempNode = NULL;
+    uint64_t array_ip_input[ip_array_size];
+    uint8_t protocol_input[ip_array_size];
+    uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
+    uint64_t array_ip_input_buff[queue_num][queue_multipler];
+    uint8_t protocol_input_buff[queue_num][queue_multipler];
+    uint16_t s_port_input_buff[queue_num][queue_multipler], d_port_input_buff[queue_num][queue_multipler];
+
+    // prep rules
+    ruleList = malloc(sizeof(struct ipv4Rule));
+    ruleNum = load_rules(rule_file, ruleList);
+
+    rule_ip = malloc(ruleNum * 8);
+    rule_mask = malloc(ruleNum * 8);
+    rule_protocol = malloc(ruleNum);
+    rule_s_port = malloc(ruleNum * 2);
+    rule_d_port = malloc(ruleNum * 2);
+    rule_verdict = malloc(ruleNum * sizeof(int));
+
+    printf("Number of rules %d\n", ruleNum);
+    rule_list_to_arr_joined(ruleList, rule_ip, rule_mask, rule_protocol, rule_s_port, rule_d_port, rule_verdict);
+    free_rule_list(ruleList);
+
+    for (int i = 0; i < ruleNum; i++)
+    {
+        printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
+    }
 
     for (int i = 0; i < queue_num; i++)
     {
@@ -512,18 +487,30 @@ int main()
     }
 
     netf_fd = nfq_fd(handler);
-    pthread_create(&rt, NULL, recvThread, NULL);
-    pthread_create(&vt, NULL, verdictThread, NULL);
+
+    // prep opencl buffers
+    deviceId = create_device_cl();
+    // create context
+    context = clCreateContext(NULL, 1, &deviceId, NULL, NULL, &ocl_err);
+    print_err(ocl_err);
+
+    // build program;
+    program = create_program_cl(context, deviceId, source);
+
+    // create all buffer Rule(with value) and input
+    declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
 
     // need to turn this to a daemon
-    while (1)
+    while (program_running)
     {
+        rcv_len = recv(netf_fd, buf, sizeof(buf), 0);
+        if (rcv_len < 0)
+            continue;
+        nfq_handle_packet(handler, buf, rcv_len);
         continue;
     }
 
     // clean up queues
-    pthread_cancel(rt);
-    pthread_cancel(vt);
 
     for (int i = 0; i < queue_num; i++)
     {
