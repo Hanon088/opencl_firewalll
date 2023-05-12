@@ -38,11 +38,11 @@ char buf[0xffff] __attribute__((aligned));
 struct nfq_handle *handler;
 
 // file global for storing packet
-uint64_t array_ip_input[ip_array_size];
-uint32_t packet_id[ip_array_size];
-struct nfq_q_handle *packet_queue[ip_array_size];
-uint8_t protocol_input[ip_array_size];
-uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
+uint64_t array_ip_input[queue_num][queue_multipler];
+uint32_t packet_id[queue_num][queue_multipler];
+struct nfq_q_handle *packet_queue[queue_num][queue_multipler];
+uint8_t protocol_input[queue_num][queue_multipler];
+uint16_t s_port_input[queue_num][queue_multipler], d_port_input[queue_num][queue_multipler];
 static volatile int packet_data_count[queue_num];
 
 // file global for OpenCL kernel
@@ -66,7 +66,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
     memcpy(&queueNum, (int *)data, sizeof(int));
     // printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum] + 1);
 
-    packet_queue[queueNum * queue_multipler + packet_data_count[queueNum]] = queue;
+    packet_queue[queueNum][packet_data_count[queueNum]] = queue;
 
     ph = nfq_get_msg_packet_hdr(nfad);
     if (!ph)
@@ -98,27 +98,27 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         return 0;
     }
 
-    memcpy(&array_ip_input[queueNum * queue_multipler + packet_data_count[queueNum]], ip_addr, 8);
-    s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = ip->protocol;
-    packet_id[queueNum * queue_multipler + packet_data_count[queueNum]] = ntohl(ph->packet_id);
+    memcpy(&array_ip_input[queueNum][packet_data_count[queueNum]], ip_addr, 8);
+    s_port_input[queueNum][packet_data_count[queueNum]] = ip->protocol;
+    packet_id[queueNum][packet_data_count[queueNum]] = ntohl(ph->packet_id);
 
     if (nfq_ip_set_transport_header(pkBuff, ip) < 0)
     {
-        s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
-        d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
+        s_port_input[queueNum][packet_data_count[queueNum]] = 0;
+        d_port_input[queueNum][packet_data_count[queueNum]] = 0;
     }
     else if (ip->protocol == IPPROTO_TCP)
     {
         tcp = nfq_tcp_get_hdr(pkBuff);
         if (!tcp)
         {
-            s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
-            d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
+            s_port_input[queueNum][packet_data_count[queueNum]] = 0;
+            d_port_input[queueNum][packet_data_count[queueNum]] = 0;
         }
         else
         {
-            s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = ntohs(tcp->source);
-            d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = ntohs(tcp->dest);
+            s_port_input[queueNum][packet_data_count[queueNum]] = ntohs(tcp->source);
+            d_port_input[queueNum][packet_data_count[queueNum]] = ntohs(tcp->dest);
         }
     }
     else if (ip->protocol == IPPROTO_UDP)
@@ -126,19 +126,19 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         udp = nfq_udp_get_hdr(pkBuff);
         if (!udp)
         {
-            s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
-            d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
+            s_port_input[queueNum][packet_data_count[queueNum]] = 0;
+            d_port_input[queueNum][packet_data_count[queueNum]] = 0;
         }
         else
         {
-            s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = ntohs(udp->source);
-            d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = ntohs(udp->dest);
+            s_port_input[queueNum][packet_data_count[queueNum]] = ntohs(udp->source);
+            d_port_input[queueNum][packet_data_count[queueNum]] = ntohs(udp->dest);
         }
     }
     else
     {
-        s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
-        d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
+        s_port_input[queueNum][packet_data_count[queueNum]] = 0;
+        d_port_input[queueNum][packet_data_count[queueNum]] = 0;
     }
 
     pktb_free(pkBuff);
@@ -153,7 +153,6 @@ int main()
     struct nfq_q_handle *queue[queue_num];
     pthread_t vt, rt;
     int queueNum[queue_num];
-    struct callbackStruct *tempNode;
 
     int rcv_len;
 
@@ -278,9 +277,9 @@ int main()
             for (int j = 0; j < queue_multipler; j++)
             {
                 // printf("%d", result[i * queue_multipler + j]);
-                nfq_set_verdict(packet_queue[i * queue_multipler + j], packet_id[i * queue_multipler + j], result[i * queue_multipler + j], 0, NULL);
-                packet_data_count[i]--;
+                nfq_set_verdict(packet_queue[i][j], packet_id[i][j], result[i * queue_multipler + j], 0, NULL);
             }
+            packet_data_count[i] = 0;
         }
     }
 
