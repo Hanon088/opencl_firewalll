@@ -170,42 +170,43 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 
     if (!packet_data[queueNum])
     {
-        err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
+        /*err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
             fprintf(stderr, "pthread_mutex_lock fails\n");
             exit(1);
-        }
+        }*/
         packet_data[queueNum] = localBuff;
         packet_data_tail[queueNum] = localBuff;
         packet_data_count[queueNum]++;
-        err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
+        /*err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
             fprintf(stderr, "pthread_mutex_unlock fails\n");
             exit(1);
-        }
+        }*/
     }
     else if (!packet_data_tail[queueNum]->next)
     {
-        err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
+        /*err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
             fprintf(stderr, "pthread_mutex_lock fails\n");
             exit(1);
-        }
+        }*/
         packet_data_tail[queueNum]->next = localBuff;
         packet_data_tail[queueNum] = packet_data_tail[queueNum]->next;
         packet_data_count[queueNum]++;
-        err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
+        /*err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
             fprintf(stderr, "pthread_mutex_unlock fails\n");
             exit(1);
-        }
+        }*/
     }
     else
     {
+        // do we even need this case?
         err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
@@ -344,16 +345,16 @@ void *verdictThread()
         }
 
         // can be removed and write to 2d array and read as 1d from opencl when match on cpu is removed
-        memcpy(array_ip_input, array_ip_input_buff, ip_array_size * 8);
+        /* memcpy(array_ip_input, array_ip_input_buff, ip_array_size * 8);
         memcpy(protocol_input, protocol_input_buff, ip_array_size * 1);
         memcpy(s_port_input, s_port_input_buff, ip_array_size * 2);
         memcpy(d_port_input, d_port_input_buff, ip_array_size * 2);
         // check rule_ip ip on cpu, can be removed later
         int test,
             protocol_result, sport_result, dport_result;
-        int verdict_buffer = 0;
+        int verdict_buffer = 0;*/
 
-        printf("MATCH ON CPU\n");
+        /*printf("MATCH ON CPU\n");
         for (int i = 0; i < ip_array_size * ruleNum; i++)
         {
 
@@ -388,7 +389,7 @@ void *verdictThread()
                 verdict_buffer = 0;
             }
         }
-        printf("\n");
+        printf("\n");*/
 
         printf("MATCH ON OPENCL DEVICE\n");
         // compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
@@ -401,12 +402,12 @@ void *verdictThread()
                 nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i * queue_multipler + j], 0, NULL);
                 // nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, NF_ACCEPT, 0, NULL);
 
-                mutex_err = pthread_mutex_lock(&packet_data_mtx[i]);
+                /*mutex_err = pthread_mutex_lock(&packet_data_mtx[i]);
                 if (mutex_err != 0)
                 {
                     fprintf(stderr, "pthread_mutex_lock fails\n");
                     exit(1);
-                }
+                }*/
                 if (packet_data[i]->next)
                 {
                     tempNode = NULL;
@@ -418,12 +419,12 @@ void *verdictThread()
                     free(tempNode);
                     packet_data_count[i]--;
                 }
-                mutex_err = pthread_mutex_unlock(&packet_data_mtx[i]);
+                /*mutex_err = pthread_mutex_unlock(&packet_data_mtx[i]);
                 if (mutex_err != 0)
                 {
                     fprintf(stderr, "pthread_mutex_unlock fails\n");
                     exit(1);
-                }
+                }*/
             }
         }
     }
