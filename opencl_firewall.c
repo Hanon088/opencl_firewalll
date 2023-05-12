@@ -38,11 +38,9 @@ char buf[0xffff] __attribute__((aligned));
 struct nfq_handle *handler;
 
 // file global for storing packet
-/*struct callbackStruct *packet_data[queue_num];
-struct callbackStruct *packet_data_tail[queue_num];
-static pthread_mutex_t packet_data_mtx[queue_num];*/
 uint64_t array_ip_input[ip_array_size];
 uint32_t packet_id[ip_array_size];
+struct nfq_q_handle *packet_queue[queue_num];
 uint8_t protocol_input[ip_array_size];
 uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
 static volatile int packet_data_count[queue_num];
@@ -67,6 +65,11 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 
     memcpy(&queueNum, (int *)data, sizeof(int));
     // printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum] + 1);
+
+    if (!packet_queue[queueNum])
+    {
+        packet_queue[queueNum] = queue;
+    }
 
     ph = nfq_get_msg_packet_hdr(nfad);
     if (!ph)
@@ -98,27 +101,27 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         return 0;
     }
 
-    memcpy(&array_ip_input[queueNum * queue_multipler + packet_data_count[queue_num]], ip_addr, 8);
-    s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = ip->protocol;
-    packet_id[queueNum * queue_multipler + packet_data_count[queue_num]] = ntohl(ph->packet_id);
+    memcpy(&array_ip_input[queueNum * queue_multipler + packet_data_count[queueNum]], ip_addr, 8);
+    s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = ip->protocol;
+    packet_id[queueNum * queue_multipler + packet_data_count[queueNum]] = ntohl(ph->packet_id);
 
     if (nfq_ip_set_transport_header(pkBuff, ip) < 0)
     {
-        s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
-        d_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
+        s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
+        d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
     }
     else if (ip->protocol == IPPROTO_TCP)
     {
         tcp = nfq_tcp_get_hdr(pkBuff);
         if (!tcp)
         {
-            s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
-            d_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
+            s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
+            d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
         }
         else
         {
-            s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = ntohs(tcp->source);
-            d_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = ntohs(tcp->dest);
+            s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = ntohs(tcp->source);
+            d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = ntohs(tcp->dest);
         }
     }
     else if (ip->protocol == IPPROTO_UDP)
@@ -131,97 +134,23 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         }
         else
         {
-            s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = ntohs(udp->source);
-            d_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = ntohs(udp->dest);
+            s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = ntohs(udp->source);
+            d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = ntohs(udp->dest);
         }
     }
     else
     {
-        s_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
-        d_port_input[queueNum * queue_multipler + packet_data_count[queue_num]] = 0;
+        s_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
+        d_port_input[queueNum * queue_multipler + packet_data_count[queueNum]] = 0;
     }
 
     pktb_free(pkBuff);
 
-    packet_data_count[queue_num]++;
+    packet_data_count[queueNum]++;
 
     return 0;
 }
 
-// takes data stored by callback and calls OpenCL kernel
-void *verdictThread()
-{
-
-    // waits for packets to arrive in ALL queues
-    while (program_running)
-    {
-        for (int i = 0; i < queue_num; i++)
-        {
-            if (packet_data_count[i] < queue_multipler + 1)
-            {
-                goto cnt;
-            }
-        }
-
-        break;
-
-    cnt:;
-        continue;
-    }
-
-    while (program_running)
-    {
-        for (int i = 0; i < queue_num; i++)
-        {
-            // makes sure each queues has at least 2 packets, perhaps can be optimised?
-            if (packet_data_count[i] < queue_multipler + 1)
-            {
-                goto cnt;
-            }
-        }
-
-        printf("\n\n\nSTARTING OCL PREP %ld\n\n\n", ++batch_num);
-
-        for (int i = 0; i < queue_num; i++)
-        {
-            tempNode = packet_data[i];
-            for (int j = 0; j < queue_multipler; j++)
-            {
-                // source and dest ip and masks are concatenated to 64 bits
-                ip_addr[0] = tempNode->source_ip;
-                ip_addr[1] = tempNode->dest_ip;
-                printf("QUEUE %d PACKET ID: %u\n", i, tempNode->packet_id);
-                printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), tempNode->ip_protocol, tempNode->source_port, tempNode->dest_port);
-
-                memcpy(&array_ip_input_buff[i][j], ip_addr, 8);
-                protocol_input_buff[i][j] = tempNode->ip_protocol;
-                s_port_input_buff[i][j] = tempNode->source_port;
-                d_port_input_buff[i][j] = tempNode->dest_port;
-                tempNode = tempNode->next;
-            }
-        }
-
-        printf("MATCH ON OPENCL DEVICE\n");
-        compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
-        for (int i = 0; i < queue_num; i++)
-        {
-            for (int j = 0; j < queue_multipler; j++)
-            {
-                printf("%d", result[i * queue_multipler + j]);
-                nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i * queue_multipler + j], 0, NULL);
-            }
-        }
-    }
-    release_buffer(&program, &context);
-    free(rule_ip);
-    free(rule_mask);
-    free(rule_protocol);
-    free(rule_s_port);
-    free(rule_d_port);
-    free(rule_verdict);
-}
-
-// only functions to load the programm
 int main()
 {
     struct nfq_q_handle *queue[queue_num];
@@ -267,6 +196,7 @@ int main()
 
     for (int i = 0; i < queue_num; i++)
     {
+        packet_queue[i] = NULL;
         packet_data_count[i] = 0;
     }
 
@@ -335,7 +265,25 @@ int main()
         if (rcv_len < 0)
             continue;
         nfq_handle_packet(handler, buf, rcv_len);
-        continue;
+
+        for (int i = 0; i < queue_num; i++)
+        {
+            if (packet_data_count[i] < queue_multipler)
+            {
+                continue;
+            }
+        }
+
+        printf("MATCH ON OPENCL DEVICE\n");
+        compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
+        for (int i = 0; i < queue_num; i++)
+        {
+            for (int j = 0; j < queue_multipler; j++)
+            {
+                printf("%d", result[i * queue_multipler + j]);
+                nfq_set_verdict(packet_queue[i], packet_id[i * queue_multipler + j], result[i * queue_multipler + j], 0, NULL);
+            }
+        }
     }
 
     // clean up queues
@@ -347,21 +295,13 @@ int main()
 
     nfq_close(handler);
 
-    // clean up stored packet data
-    for (int i = 0; i < queue_num; i++)
-    {
-        tempNode = packet_data[i];
-        if (!tempNode)
-        {
-            continue;
-        }
-        while (tempNode->next != NULL)
-        {
-            tempNode = tempNode->next;
-            free(packet_data[i]);
-            packet_data[i] = tempNode;
-        }
-    }
+    release_buffer(&program, &context);
+    free(rule_ip);
+    free(rule_mask);
+    free(rule_protocol);
+    free(rule_s_port);
+    free(rule_d_port);
+    free(rule_verdict);
 
     return 0;
 }
