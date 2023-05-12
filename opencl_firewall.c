@@ -186,13 +186,14 @@ int main()
     rule_verdict = malloc(ruleNum * sizeof(int));
 
     printf("Number of rules %d\n", ruleNum);
+    printf("Queue Shape %d Queue x %d Packets Per Queue\n", queue_num, queue_multipler);
     rule_list_to_arr_joined(ruleList, rule_ip, rule_mask, rule_protocol, rule_s_port, rule_d_port, rule_verdict);
     free_rule_list(ruleList);
 
-    for (int i = 0; i < ruleNum; i++)
+    /*for (int i = 0; i < ruleNum; i++)
     {
         printf("RULE %d %u.%u.%u.%u d %u.%u.%u.%u proto %d sp %u dp %u\n", i, printable_ip_joined(rule_ip[i]), rule_protocol[i], rule_s_port[i], rule_d_port[i]);
-    }
+    }*/
 
     for (int i = 0; i < queue_num; i++)
     {
@@ -274,13 +275,13 @@ int main()
             }
         }
 
-        printf("MATCH ON OPENCL DEVICE\n");
+        // printf("MATCH ON OPENCL DEVICE\n");
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
         for (int i = 0; i < queue_num; i++)
         {
             for (int j = 0; j < queue_multipler; j++)
             {
-                printf("%d", result[i * queue_multipler + j]);
+                // printf("%d", result[i * queue_multipler + j]);
                 nfq_set_verdict(packet_queue[i], packet_id[i * queue_multipler + j], result[i * queue_multipler + j], 0, NULL);
             }
         }
