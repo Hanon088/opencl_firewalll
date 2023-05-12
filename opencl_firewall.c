@@ -283,6 +283,7 @@ int main()
             {
                 // printf("%d", result[i * queue_multipler + j]);
                 nfq_set_verdict(packet_queue[i], packet_id[i * queue_multipler + j], result[i * queue_multipler + j], 0, NULL);
+                packet_data_count[i]--;
             }
         }
     }
