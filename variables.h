@@ -1,8 +1,8 @@
 #include <CL/cl.h>
 
-#define ip_array_size 12
-#define queue_num 6
-#define queue_multipler 2
+#define ip_array_size 90
+#define queue_num 1
+#define queue_multipler 90
 
 extern const char *source;
 extern const char *func_compare;
