@@ -169,49 +169,25 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
 
     if (!packet_data[queueNum])
     {
-        /*err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
-        if (err != 0)
-        {
-            fprintf(stderr, "pthread_mutex_lock fails\n");
-            exit(1);
-        }*/
         packet_data[queueNum] = localBuff;
         packet_data_tail[queueNum] = localBuff;
         packet_data_count[queueNum]++;
-        /*err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
-        if (err != 0)
-        {
-            fprintf(stderr, "pthread_mutex_unlock fails\n");
-            exit(1);
-        }*/
     }
     else if (!packet_data_tail[queueNum]->next)
     {
-        /*err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
-        if (err != 0)
-        {
-            fprintf(stderr, "pthread_mutex_lock fails\n");
-            exit(1);
-        }*/
         packet_data_tail[queueNum]->next = localBuff;
         packet_data_tail[queueNum] = packet_data_tail[queueNum]->next;
         packet_data_count[queueNum]++;
-        /*err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
-        if (err != 0)
-        {
-            fprintf(stderr, "pthread_mutex_unlock fails\n");
-            exit(1);
-        }*/
     }
     else
     {
         // do we even need this case?
-        err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
+        /*err = pthread_mutex_lock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
             fprintf(stderr, "pthread_mutex_lock fails\n");
             exit(1);
-        }
+        }*/
         lastBuff = packet_data[queueNum];
 
         // what if lastBuff is freed by verdictThread before finding next?
@@ -222,12 +198,12 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         lastBuff->next = localBuff;
         packet_data_tail[queueNum] = localBuff;
         packet_data_count[queueNum]++;
-        err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
+        /*err = pthread_mutex_unlock(&packet_data_mtx[queueNum]);
         if (err != 0)
         {
             fprintf(stderr, "pthread_mutex_unlock fails\n");
             exit(1);
-        }
+        }*/
     }
 
     return 0;
