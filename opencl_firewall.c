@@ -57,7 +57,6 @@ struct nfq_handle *handler;
 // file global for storing packet
 struct callbackStruct *packet_data[queue_num];
 struct callbackStruct *packet_data_tail[queue_num];
-static pthread_mutex_t packet_data_mtx[queue_num];
 static volatile int packet_data_count[queue_num];
 
 // file global for OpenCL kernel
@@ -256,12 +255,10 @@ void *verdictThread()
     int mutex_err;
     uint32_t ip_addr[2] __attribute__((aligned));
     struct callbackStruct *tempNode = NULL;
-    uint64_t array_ip_input[ip_array_size];
-    uint8_t protocol_input[ip_array_size];
-    uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
-    uint64_t array_ip_input_buff[queue_num][queue_multipler];
-    uint8_t protocol_input_buff[queue_num][queue_multipler];
-    uint16_t s_port_input_buff[queue_num][queue_multipler], d_port_input_buff[queue_num][queue_multipler];
+
+    uint64_t array_ip_input[queue_num][queue_multipler];
+    uint8_t protocol_input[queue_num][queue_multipler];
+    uint16_t s_port_input[queue_num][queue_multipler], d_port_input[queue_num][queue_multipler];
 
     // prep rules
     ruleList = malloc(sizeof(struct ipv4Rule));
@@ -336,60 +333,13 @@ void *verdictThread()
                 printf("QUEUE %d PACKET ID: %u\n", i, tempNode->packet_id);
                 printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), tempNode->ip_protocol, tempNode->source_port, tempNode->dest_port);
 
-                memcpy(&array_ip_input_buff[i][j], ip_addr, 8);
-                protocol_input_buff[i][j] = tempNode->ip_protocol;
-                s_port_input_buff[i][j] = tempNode->source_port;
-                d_port_input_buff[i][j] = tempNode->dest_port;
+                memcpy(&array_ip_input[i][j], ip_addr, 8);
+                protocol_input[i][j] = tempNode->ip_protocol;
+                s_port_input[i][j] = tempNode->source_port;
+                d_port_input[i][j] = tempNode->dest_port;
                 tempNode = tempNode->next;
             }
         }
-
-        // can be removed and write to 2d array and read as 1d from opencl when match on cpu is removed
-        /* memcpy(array_ip_input, array_ip_input_buff, ip_array_size * 8);
-        memcpy(protocol_input, protocol_input_buff, ip_array_size * 1);
-        memcpy(s_port_input, s_port_input_buff, ip_array_size * 2);
-        memcpy(d_port_input, d_port_input_buff, ip_array_size * 2);
-        // check rule_ip ip on cpu, can be removed later
-        int test,
-            protocol_result, sport_result, dport_result;
-        int verdict_buffer = 0;*/
-
-        /*printf("MATCH ON CPU\n");
-        for (int i = 0; i < ip_array_size * ruleNum; i++)
-        {
-
-            if (rule_protocol[i % ruleNum] == 0)
-            {
-                protocol_input[i / ruleNum] = 0;
-            }
-            if (rule_s_port[i % ruleNum] == 0)
-            {
-                s_port_input[i / ruleNum] = 0;
-            }
-            if (rule_d_port[i % ruleNum] == 0)
-            {
-                d_port_input[i / ruleNum] = 0;
-            }
-            test = rule_ip[i % ruleNum] == (array_ip_input[i / ruleNum] & rule_mask[i % ruleNum]);
-            protocol_result = (rule_protocol[i % ruleNum] == protocol_input[i / ruleNum]);
-            sport_result = (rule_s_port[i % ruleNum] == s_port_input[i / ruleNum]);
-            dport_result = (rule_d_port[i % ruleNum] == d_port_input[i / ruleNum]);
-            //        printf("%d|", i / ruleNum);
-            //        printf("%u.%u.%u.%u\n", printable_ip(array_ip_input[i/ruleNum]));
-            if (test == 1)
-            {
-                verdict_buffer = rule_verdict[i % ruleNum];
-                i += ruleNum - i % ruleNum;
-                printf("%d", verdict_buffer);
-                verdict_buffer = 0;
-            }
-            if (i % ruleNum == ruleNum - 1)
-            {
-                printf("%d", verdict_buffer);
-                verdict_buffer = 0;
-            }
-        }
-        printf("\n");*/
 
         printf("MATCH ON OPENCL DEVICE\n");
         // compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
@@ -400,14 +350,6 @@ void *verdictThread()
             {
                 printf("%d", result[i * queue_multipler + j]);
                 nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, result[i * queue_multipler + j], 0, NULL);
-                // nfq_set_verdict(packet_data[i]->queue, packet_data[i]->packet_id, NF_ACCEPT, 0, NULL);
-
-                /*mutex_err = pthread_mutex_lock(&packet_data_mtx[i]);
-                if (mutex_err != 0)
-                {
-                    fprintf(stderr, "pthread_mutex_lock fails\n");
-                    exit(1);
-                }*/
                 if (packet_data[i]->next)
                 {
                     tempNode = NULL;
@@ -419,12 +361,6 @@ void *verdictThread()
                     free(tempNode);
                     packet_data_count[i]--;
                 }
-                /*mutex_err = pthread_mutex_unlock(&packet_data_mtx[i]);
-                if (mutex_err != 0)
-                {
-                    fprintf(stderr, "pthread_mutex_unlock fails\n");
-                    exit(1);
-                }*/
             }
         }
     }
@@ -466,7 +402,6 @@ int main()
     {
         packet_data[i] = NULL;
         packet_data_tail[i] = NULL;
-        packet_data_mtx[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
         packet_data_count[i] = 0;
     }
 
