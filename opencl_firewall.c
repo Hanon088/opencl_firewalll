@@ -40,7 +40,7 @@ struct nfq_handle *handler;
 // file global for storing packet
 uint64_t array_ip_input[ip_array_size];
 uint32_t packet_id[ip_array_size];
-struct nfq_q_handle *packet_queue[queue_num];
+struct nfq_q_handle *packet_queue[ip_array_size];
 uint8_t protocol_input[ip_array_size];
 uint16_t s_port_input[ip_array_size], d_port_input[ip_array_size];
 static volatile int packet_data_count[queue_num];
@@ -66,10 +66,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
     memcpy(&queueNum, (int *)data, sizeof(int));
     // printf("QUEUE NUM %d PACKET NUM %d\n", queueNum, packetNumInQ[queueNum] + 1);
 
-    if (!packet_queue[queueNum])
-    {
-        packet_queue[queueNum] = queue;
-    }
+    packet_queue[queueNum] = queue;
 
     ph = nfq_get_msg_packet_hdr(nfad);
     if (!ph)
@@ -197,7 +194,6 @@ int main()
 
     for (int i = 0; i < queue_num; i++)
     {
-        packet_queue[i] = NULL;
         packet_data_count[i] = 0;
     }
 
@@ -282,7 +278,7 @@ int main()
             for (int j = 0; j < queue_multipler; j++)
             {
                 // printf("%d", result[i * queue_multipler + j]);
-                nfq_set_verdict(packet_queue[i], packet_id[i * queue_multipler + j], result[i * queue_multipler + j], 0, NULL);
+                nfq_set_verdict(packet_queue[i * queue_multipler + j], packet_id[i * queue_multipler + j], result[i * queue_multipler + j], 0, NULL);
                 packet_data_count[i]--;
             }
         }
