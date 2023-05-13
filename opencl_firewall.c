@@ -366,7 +366,7 @@ void *verdictThread()
 
         // time before packets are sent to gpu
         to_gpu = clock();
-        compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
+        compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, ip_array_size, ruleNum);
         // time after packets are sent to gpu
         after_gpu = clock();
         gpu_time = ((double)(after_gpu - to_gpu) / CLOCKS_PER_SEC) * 1000000;
