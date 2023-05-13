@@ -37,7 +37,6 @@ int declare_buffer(
         uint16_t rule_dport[],
         uint8_t rule_protocol[],
         int verdict[],
-        int result[],
         int rule_arr_size,
         int ip_arr_size
 );
