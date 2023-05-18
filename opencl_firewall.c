@@ -413,7 +413,7 @@ int main()
             exit(1);
         }
 
-        if (nfq_set_mode(queue[i], NFQNL_COPY_PACKET, 0xffff) < 0)
+        if (nfq_set_mode(queue[i], NFQNL_COPY_META, 0xffff) < 0)
         {
             fprintf(stderr, "can't set packet_copy mode\n");
             exit(1);
