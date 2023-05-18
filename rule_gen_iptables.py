@@ -5,7 +5,7 @@ NOT TESTED YET
 
 import random
 
-s_ip = [f"127.0.{i}.{j}" for i in range(4) for j in range(250)]
+s_ip = [f"192.0.{i}.{j}" for i in range(4) for j in range(250)]
 #s_mask = ["255.255.0.0" for _ in range(256*256)]
 d_ip = ["0.0.0.0" for _ in range(4*250)]
 #d_mask = ["0.0.0.0" for _ in range(256*256)]
@@ -20,5 +20,5 @@ rules = [
 rules[-1] = "iptables --append FORWARD --protocol all --jump ACCEPT"
 rules = "".join(rules)
 
-with open('iptables_rules_1k', 'w') as f:
+with open('iptables_rules_1k_new', 'w') as f:
     print(rules, file=f)
