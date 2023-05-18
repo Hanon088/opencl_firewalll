@@ -105,6 +105,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
         return 0;
     }
+    printf("PAYLOAD READ\n");
 
     // allocate user space buffer???
     pkBuff = pktb_alloc(AF_INET, rawData, rcv_len, 0x1000);
@@ -113,6 +114,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
         return 0;
     }
+    printf("PKBUFF CERATED\n");
 
     ip = nfq_ip_get_hdr(pkBuff);
     if (!ip)
@@ -120,6 +122,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, 0, NULL);
         return 0;
     }
+    printf("IP HEADER READ\n");
 
     localBuff->source_ip = ntohl(ip->saddr);
     localBuff->dest_ip = ntohl(ip->daddr);
@@ -164,6 +167,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
         localBuff->source_port = 0;
         localBuff->dest_port = 0;
     }
+    printf("TRANSPORT HEADER READ\n");
 
     pktb_free(pkBuff);
 
