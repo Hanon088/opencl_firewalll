@@ -96,6 +96,7 @@ netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg, struct nfq
     {
         return 0;
     }
+    printf("META READ\n");
 
     rawData = NULL;
     // get packet data from nfad
