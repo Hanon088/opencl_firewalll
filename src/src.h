@@ -1,3 +1,6 @@
+//
+// Created by User on 11/11/2022.
+//
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -52,6 +55,7 @@ int compare(uint64_t input_ip[],
             cl_device_id *deviceId,
             cl_context *context,
             cl_program *program,
+            int result[],
             int ip_arr_size,
             int rule_arr_size);
 
