@@ -307,7 +307,7 @@ void *verdictThread()
     program = create_program_cl(context, deviceId, source);
 
     // create all buffer Rule(with value) and input
-    declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ruleNum, ip_array_size);
+    declare_buffer(&context, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, ruleNum, ip_array_size);
 
     cl_buff_end = clock();
     printf("Time taken to prepare OpenCL buffers = %.2lf Microseconds\n", ((double)(cl_buff_end - cl_buff_start) / CLOCKS_PER_SEC) * 1000000);
@@ -366,7 +366,7 @@ void *verdictThread()
 
         // time before packets are sent to gpu
         to_gpu = clock();
-        compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, ip_array_size, ruleNum);
+        compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
         // time after packets are sent to gpu
         after_gpu = clock();
         gpu_time = ((double)(after_gpu - to_gpu) / CLOCKS_PER_SEC) * 1000000;
