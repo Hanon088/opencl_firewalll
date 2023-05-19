@@ -52,7 +52,6 @@ int compare(uint64_t input_ip[],
             cl_device_id *deviceId,
             cl_context *context,
             cl_program *program,
-            int result[],
             int ip_arr_size,
             int rule_arr_size);
 

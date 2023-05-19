@@ -351,8 +351,8 @@ void *verdictThread()
                 // source and dest ip and masks are concatenated to 64 bits
                 ip_addr[0] = tempNode->source_ip;
                 ip_addr[1] = tempNode->dest_ip;
-                // printf("QUEUE %d PACKET ID: %u\n", i, tempNode->packet_id);
-                // printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), tempNode->ip_protocol, tempNode->source_port, tempNode->dest_port);
+                printf("QUEUE %d PACKET ID: %u\n", i, tempNode->packet_id);
+                printf("s %u.%u.%u.%u d %u.%u.%u.%u proto %u sp %u dp %u\n", printable_ip(ip_addr[0]), printable_ip(ip_addr[1]), tempNode->ip_protocol, tempNode->source_port, tempNode->dest_port);
 
                 memcpy(&array_ip_input[i][j], ip_addr, 8);
                 protocol_input[i][j] = tempNode->ip_protocol;
@@ -504,7 +504,7 @@ int main()
 
     while (1)
     {
-        if ((batch_num >= 1000) && recv_running && verdict_running)
+        if ((batch_num >= 1000000) && recv_running && verdict_running)
         {
             recv_running = 0;
             pthread_join(rt, NULL);
