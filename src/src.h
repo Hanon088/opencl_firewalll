@@ -1,6 +1,4 @@
-//
-// Created by User on 11/11/2022.
-//
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -59,4 +57,4 @@ int compare(uint64_t input_ip[],
             int ip_arr_size,
             int rule_arr_size);
 
-#endif // OPENCL_FIREWALLL_SRC_H
+#endif // OPENCL_FIREWALLL_SRC_
