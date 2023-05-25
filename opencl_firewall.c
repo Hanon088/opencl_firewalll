@@ -40,8 +40,6 @@ struct callbackStruct
     uint8_t ip_protocol;
     uint16_t source_port;
     uint16_t dest_port;
-    /*a packet buffer may needs to be implemented
-    if it turns out libnetfilter_queue doesn't hold the packet*/
 };
 
 // file global for thread loops
@@ -289,7 +287,7 @@ void *verdictThread()
     {
         for (int i = 0; i < queue_num; i++)
         {
-            // makes sure each queues has at least 2 packets, perhaps can be optimised?
+            // makes sure each queue has enough packets, perhaps can be optimised?
             if (packet_data_count[i] < queue_multipler + 1)
             {
                 goto cnt;
@@ -318,7 +316,6 @@ void *verdictThread()
         }
 
         printf("MATCH ON OPENCL DEVICE\n");
-        // compare(array_ip_input, s_port_input, d_port_input, protocol_input, rule_ip, rule_mask, rule_s_port, rule_d_port, rule_protocol, rule_verdict, result, ip_array_size, ruleNum);
         compare(array_ip_input, s_port_input, d_port_input, protocol_input, &deviceId, &context, &program, result, ip_array_size, ruleNum);
         for (int i = 0; i < queue_num; i++)
         {
