@@ -9,3 +9,5 @@ Important branches are
 - [ ] main: Main program, not turned into service/daemon yet
 
 - [ ] OpenCL-acc: Development of the OpenCL part of the program
+
+Other branches are experiments we use to test the system
